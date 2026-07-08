@@ -16,13 +16,11 @@ try {
     const buildInjection = `
 // Wrapped by Tallywise build script to guarantee OpenNext compilation before deployment in CI
 if ((process.argv.includes('deploy') || process.argv.includes('publish')) && !process.env.TALLYWISE_BUILDING) {
+  process.env.TALLYWISE_BUILDING = 'true'; // Set environment variable globally to block recursion in spawned grandchild processes
   const { execSync } = require('child_process');
   try {
     console.log('Running proactive OpenNext build on Cloudflare CI...');
-    execSync('npx opennextjs-cloudflare build', { 
-      stdio: 'inherit',
-      env: { ...process.env, TALLYWISE_BUILDING: 'true' }
-    });
+    execSync('npx opennextjs-cloudflare build', { stdio: 'inherit' });
   } catch (e) {
     console.error('Proactive OpenNext build failed:', e);
     process.exit(1);
