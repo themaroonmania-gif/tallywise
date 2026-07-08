@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ShellInput, ShellSelect, ResultCard } from './CalculatorShell';
 
 export function AutoLoanCalculator() {
   const [vehiclePrice, setVehiclePrice] = useState<number>(35000);
@@ -58,126 +59,88 @@ export function AutoLoanCalculator() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">Auto Loan Details</h2>
-
+    <CalculatorShell
+      title="Auto Loan Details"
+      inputs={
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Vehicle Price</label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-                <input
-                  type="number"
-                  value={vehiclePrice}
-                  onChange={(e) => setVehiclePrice(Number(e.target.value))}
-                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Down Payment</label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-                <input
-                  type="number"
-                  value={downPayment}
-                  onChange={(e) => setDownPayment(Number(e.target.value))}
-                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-                />
-              </div>
-            </div>
+            <ShellInput
+              label="Vehicle Price"
+              suffix="$"
+              value={vehiclePrice}
+              onChange={(e) => setVehiclePrice(Number(e.target.value))}
+            />
+            <ShellInput
+              label="Down Payment"
+              suffix="$"
+              value={downPayment}
+              onChange={(e) => setDownPayment(Number(e.target.value))}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Trade-in Value</label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-                <input
-                  type="number"
-                  value={tradeInValue}
-                  onChange={(e) => setTradeInValue(Number(e.target.value))}
-                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Sales Tax (%)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={salesTaxRate}
-                onChange={(e) => setSalesTaxRate(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-              />
-            </div>
+            <ShellInput
+              label="Trade-in Value"
+              suffix="$"
+              value={tradeInValue}
+              onChange={(e) => setTradeInValue(Number(e.target.value))}
+            />
+            <ShellInput
+              label="Sales Tax"
+              suffix="%"
+              step="0.1"
+              value={salesTaxRate}
+              onChange={(e) => setSalesTaxRate(Number(e.target.value))}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Interest Rate (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={interestRate}
-                onChange={(e) => setInterestRate(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-              />
+            <ShellInput
+              label="Interest Rate"
+              suffix="%"
+              step="0.01"
+              value={interestRate}
+              onChange={(e) => setInterestRate(Number(e.target.value))}
+            />
+            <ShellSelect
+              label="Loan Term"
+              value={loanTerm}
+              onChange={(e) => setLoanTerm(Number(e.target.value))}
+            >
+              <option value={36}>36 Months (3 Years)</option>
+              <option value={48}>48 Months (4 Years)</option>
+              <option value={60}>60 Months (5 Years)</option>
+              <option value={72}>72 Months (6 Years)</option>
+              <option value={84}>84 Months (7 Years)</option>
+            </ShellSelect>
+          </div>
+        </div>
+      }
+      results={
+        <div className="space-y-4">
+          <ResultCard label="Estimated Monthly Payment" value={formatCurrency(results.monthlyPayment)} />
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+              <span>Total Loan Amount</span>
+              <span>{formatCurrency(results.loanAmount)}</span>
             </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Loan Term</label>
-              <select
-                value={loanTerm}
-                onChange={(e) => setLoanTerm(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800 bg-white"
-              >
-                <option value={36}>36 Months (3 Years)</option>
-                <option value={48}>48 Months (4 Years)</option>
-                <option value={60}>60 Months (5 Years)</option>
-                <option value={72}>72 Months (6 Years)</option>
-                <option value={84}>84 Months (7 Years)</option>
-              </select>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Total Interest Paid</span>
+              <span className="text-red-500 font-semibold">{formatCurrency(results.totalInterest)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Total Sales Tax</span>
+              <span>{formatCurrency(results.totalSalesTax)}</span>
+            </div>
+            <div className="border-t border-slate-200 my-2"></div>
+            <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+              <span>Total Cost of Vehicle</span>
+              <span>{formatCurrency(results.totalCost)}</span>
             </div>
           </div>
         </div>
-
-        <div className="md:col-span-6 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Payment Summary</h2>
-
-            <div className="bg-emerald-600 text-white rounded-xl p-6 text-center shadow-md shadow-emerald-600/10">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
-                Estimated Monthly Payment
-              </span>
-              <div className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {formatCurrency(results.monthlyPayment)}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
-                <span>Total Loan Amount</span>
-                <span>{formatCurrency(results.loanAmount)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Total Interest Paid</span>
-                <span className="text-red-500 font-semibold">{formatCurrency(results.totalInterest)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Total Sales Tax</span>
-                <span>{formatCurrency(results.totalSalesTax)}</span>
-              </div>
-              <div className="border-t border-slate-200 my-2"></div>
-              <div className="flex justify-between items-center text-sm font-bold text-slate-850">
-                <span>Total Cost of Vehicle</span>
-                <span>{formatCurrency(results.totalCost)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

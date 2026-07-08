@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ResultCard } from './CalculatorShell';
 
 interface Course {
   id: string;
@@ -54,7 +55,7 @@ export function GpaCalculator() {
     courses.forEach((course) => {
       const basePoints = gradePoints[course.grade] ?? 0;
       const cred = course.credits;
-      
+
       // Calculate weight adjustment
       let weightBonus = 0;
       if (course.weight === 'honors') weightBonus = 0.5;
@@ -74,17 +75,15 @@ export function GpaCalculator() {
   }, [courses]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Inputs Column */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-            <h2 className="text-xl font-bold text-slate-800">Semester Course List</h2>
+    <CalculatorShell
+      title="Semester Course List"
+      inputs={
+        <div className="space-y-4">
+          <div className="flex justify-end">
             <button
               type="button"
               onClick={addCourse}
-              className="px-4 py-2 bg-indigo-650 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors"
             >
               + Add Course
             </button>
@@ -141,7 +140,7 @@ export function GpaCalculator() {
                 <div className="col-span-3 sm:col-span-2">
                   <select
                     value={course.weight}
-                    onChange={(e) => updateCourse(course.id, 'weight', e.target.value as any)}
+                    onChange={(e) => updateCourse(course.id, 'weight', e.target.value as Course['weight'])}
                     className="w-full px-2 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs font-semibold text-slate-800 bg-white"
                   >
                     <option value="standard">Standard</option>
@@ -166,41 +165,24 @@ export function GpaCalculator() {
             ))}
           </div>
         </div>
+      }
+      results={
+        <div className="space-y-4">
+          <ResultCard label="Weighted GPA" value={weightedGpa.toFixed(2)} color="indigo" />
 
-        {/* Right Output Column */}
-        <div className="lg:col-span-4 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Your GPA</h2>
+          <div className="bg-slate-100 text-slate-700 rounded-xl p-4 text-center border border-slate-200/50">
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-75 block mb-0.5">
+              Unweighted GPA
+            </span>
+            <div className="text-2xl font-bold">{unweightedGpa.toFixed(2)}</div>
+          </div>
 
-            {/* GPA Displays */}
-            <div className="space-y-4">
-              <div className="bg-indigo-650 text-white rounded-xl p-5 text-center shadow-md shadow-indigo-600/10">
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-85 block mb-1">
-                  Weighted GPA
-                </span>
-                <div className="text-4xl font-extrabold tracking-tight">
-                  {weightedGpa.toFixed(2)}
-                </div>
-              </div>
-
-              <div className="bg-slate-100 text-slate-700 rounded-xl p-4 text-center border border-slate-200/50">
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-75 block mb-0.5">
-                  Unweighted GPA
-                </span>
-                <div className="text-2xl font-bold">
-                  {unweightedGpa.toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            {/* Credit count */}
-            <div className="flex justify-between items-center text-xs font-semibold text-slate-500 border-t border-slate-200/60 pt-4">
-              <span>Total Credits Earned</span>
-              <span className="text-slate-850 font-bold text-sm">{totalCredits}</span>
-            </div>
+          <div className="flex justify-between items-center text-xs font-semibold text-slate-500 border-t border-slate-200/60 pt-4">
+            <span>Total Credits Earned</span>
+            <span className="text-slate-800 font-bold text-sm">{totalCredits}</span>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

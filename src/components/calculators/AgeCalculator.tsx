@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ResultCard } from './CalculatorShell';
 
 export function AgeCalculator() {
   const [birthDateStr, setBirthDateStr] = useState<string>('1995-06-15');
@@ -8,6 +9,7 @@ export function AgeCalculator() {
     const today = new Date();
     return today.toISOString().split('T')[0];
   });
+  const [error, setError] = useState<string>('');
 
   const [results, setResults] = useState({
     years: 0,
@@ -27,7 +29,11 @@ export function AgeCalculator() {
     const targetDate = new Date(targetDateStr + 'T00:00:00');
 
     if (isNaN(birthDate.getTime()) || isNaN(targetDate.getTime())) return;
-    if (targetDate < birthDate) return; // ignore invalid ranges
+    if (targetDate < birthDate) {
+      setError('The "age at" date must be on or after the date of birth.');
+      return;
+    }
+    setError('');
 
     const bYear = birthDate.getFullYear();
     const bMonth = birthDate.getMonth();
@@ -81,77 +87,72 @@ export function AgeCalculator() {
   }, [birthDateStr, targetDateStr]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        
-        {/* Left Inputs Column */}
-        <div className="md:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">Date Details</h2>
-
+    <CalculatorShell
+      title="Date Details"
+      inputs={
+        <div className="space-y-4">
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Date of Birth</label>
             <input
               type="date"
               value={birthDateStr}
               onChange={(e) => setBirthDateStr(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-855 bg-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
             />
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Age at Date</label>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+              Age As Of (defaults to today, pick any past or future date)
+            </label>
             <input
               type="date"
               value={targetDateStr}
               onChange={(e) => setTargetDateStr(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-855 bg-white"
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
             />
           </div>
+
+          {error && (
+            <div className="text-xs text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-100 font-semibold">
+              {error}
+            </div>
+          )}
         </div>
+      }
+      results={
+        <div className="space-y-4">
+          <ResultCard
+            label="Exact Age"
+            value={`${results.years}y ${results.months}m ${results.days}d`}
+            color="amber"
+          />
 
-        {/* Right Output Column */}
-        <div className="md:col-span-6 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Age Summary</h2>
-
-            {/* Exact Age Card */}
-            <div className="bg-amber-500 text-white rounded-xl p-5 text-center shadow-md shadow-amber-500/10">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
-                Exact Age
-              </span>
-              <div className="text-2xl md:text-3xl font-extrabold tracking-tight">
-                {results.years} Years, {results.months} Months, {results.days} Days
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-200/50">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Months</span>
+              <div className="text-lg font-bold text-slate-800">{results.totalMonths.toLocaleString()}</div>
             </div>
-
-            {/* Sub stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-250/20">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Months</span>
-                <div className="text-lg font-bold text-slate-800">{results.totalMonths.toLocaleString()}</div>
-              </div>
-              <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-250/20">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Weeks</span>
-                <div className="text-lg font-bold text-slate-800">{results.totalWeeks.toLocaleString()}</div>
-              </div>
-              <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-250/20">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Days</span>
-                <div className="text-lg font-bold text-slate-800">{results.totalDays.toLocaleString()}</div>
-              </div>
-              <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-250/20">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Hours</span>
-                <div className="text-lg font-bold text-slate-800">{results.totalHours.toLocaleString()}</div>
-              </div>
+            <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-200/50">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Weeks</span>
+              <div className="text-lg font-bold text-slate-800">{results.totalWeeks.toLocaleString()}</div>
             </div>
-
-            {/* Next Birthday info */}
-            <div className="flex justify-between items-center text-xs font-semibold text-slate-500 border-t border-slate-200/60 pt-4">
-              <span>Days until next birthday</span>
-              <span className="text-amber-600 font-bold text-sm">{results.nextBirthdayDays} Days</span>
+            <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-200/50">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Days</span>
+              <div className="text-lg font-bold text-slate-800">{results.totalDays.toLocaleString()}</div>
+            </div>
+            <div className="bg-slate-100 rounded-lg p-3 text-center border border-slate-200/50">
+              <span className="text-[10px] font-bold text-slate-500 uppercase block mb-0.5">Total Hours</span>
+              <div className="text-lg font-bold text-slate-800">{results.totalHours.toLocaleString()}</div>
             </div>
           </div>
+
+          <div className="flex justify-between items-center text-xs font-semibold text-slate-500 border-t border-slate-200/60 pt-4">
+            <span>Days until next birthday</span>
+            <span className="text-amber-600 font-bold text-sm">{results.nextBirthdayDays} Days</span>
+          </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

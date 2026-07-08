@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ShellInput, ResultCard } from './CalculatorShell';
 
 export function GradeCurveCalculator() {
   const [curveType, setCurveType] = useState<'flat' | 'root'>('flat');
@@ -17,7 +18,7 @@ export function GradeCurveCalculator() {
     let curved = original;
 
     if (curveType === 'flat') {
-      curved = Math.min(100, original + flatAdjustment);
+      curved = Math.min(100, Math.max(0, original + flatAdjustment));
     } else {
       // Root Curve: Sqrt(Original Grade) * 10
       curved = Math.sqrt(original) * 10;
@@ -33,11 +34,10 @@ export function GradeCurveCalculator() {
   }, [curveType, originalGrade, flatAdjustment]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">Grade Curve Details</h2>
-
+    <CalculatorShell
+      title="Grade Curve Details"
+      inputs={
+        <div className="space-y-4">
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Curving Method</label>
             <div className="grid grid-cols-2 gap-2 bg-slate-50 p-1 rounded-xl">
@@ -66,56 +66,42 @@ export function GradeCurveCalculator() {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Original Exam Score (%)</label>
-            <input
-              type="number"
-              max={100}
-              value={originalGrade}
-              onChange={(e) => setOriginalGrade(Number(e.target.value))}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-800"
-            />
-          </div>
+          <ShellInput
+            label="Original Exam Score"
+            suffix="%"
+            max={100}
+            value={originalGrade}
+            onChange={(e) => setOriginalGrade(Number(e.target.value))}
+          />
 
           {curveType === 'flat' && (
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Flat Point Adjustment</label>
-              <input
-                type="number"
-                value={flatAdjustment}
-                onChange={(e) => setFlatAdjustment(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-semibold text-slate-800"
-              />
-            </div>
+            <ShellInput
+              label="Flat Point Adjustment"
+              suffix="pts"
+              value={flatAdjustment}
+              onChange={(e) => setFlatAdjustment(Number(e.target.value))}
+            />
           )}
         </div>
+      }
+      results={
+        <div className="space-y-4">
+          <ResultCard label="New Curved Score" value={`${results.curvedGrade}%`} color="indigo" />
 
-        <div className="md:col-span-6 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Curved Results</h2>
-
-            <div className="bg-indigo-650 text-white rounded-xl p-5 text-center shadow-md shadow-indigo-600/10">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
-                New Curved Score
-              </span>
-              <div className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {results.curvedGrade}%
-              </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+              <span>Original Score</span>
+              <span>{originalGrade}%</span>
             </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
-                <span>Original Score</span>
-                <span>{originalGrade}%</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-655">
-                <span>Score Increase</span>
-                <span className="text-indigo-600 font-semibold">+{results.pointDifference} points</span>
-              </div>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Score Change</span>
+              <span className={`font-semibold ${results.pointDifference >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+                {results.pointDifference >= 0 ? '+' : ''}{results.pointDifference} points
+              </span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 }
