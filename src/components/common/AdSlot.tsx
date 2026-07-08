@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 interface AdSlotProps {
   id: string;
   className?: string;
-  type?: 'banner' | 'rectangle' | 'bottom';
+  type?: 'banner' | 'rectangle' | 'bottom' | 'sidebar';
 }
 
 export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
@@ -36,7 +36,10 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
         width = 728;
         height = 90;
       }
-    } else if (type === 'rectangle') {
+    } else if (type === 'rectangle' || type === 'sidebar') {
+      // Reuses the 300x250 rectangle key since we don't yet have a
+      // dedicated skyscraper (160x600) key from the ad network. Swap
+      // this key once a properly-sized code is available.
       key = '28ca4085a132e7009e4321c8f0eb39ba';
       width = 300;
       height = 250;
@@ -82,7 +85,7 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
   let heightClass = 'h-[90px]';
   if (type === 'banner') {
     heightClass = 'h-[50px] sm:h-[60px] md:h-[90px]';
-  } else if (type === 'rectangle') {
+  } else if (type === 'rectangle' || type === 'sidebar') {
     heightClass = 'h-[250px]';
   } else if (type === 'bottom') {
     heightClass = 'min-h-[150px]';
