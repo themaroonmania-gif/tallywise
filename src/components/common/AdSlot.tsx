@@ -2,104 +2,176 @@
 
 import React, { useEffect, useRef } from 'react';
 
+type AdSlotType = 'banner' | 'rectangle' | 'bottom' | 'sidebar';
+
 interface AdSlotProps {
   id: string;
   className?: string;
-  type?: 'banner' | 'rectangle' | 'bottom' | 'sidebar';
+  type?: AdSlotType;
+}
+
+type IframeAdConfig = {
+  key: string;
+  width: number;
+  height: number;
+};
+
+let iframeAdQueue: Promise<void> = Promise.resolve();
+
+function getIframeAdConfig(type: AdSlotType, viewportWidth: number, viewportHeight: number): IframeAdConfig | null {
+  if (type === 'banner') {
+    if (viewportWidth < 468) {
+      return {
+        key: 'c0e56ff887881c866dd9f0241b2ccb1c',
+        width: 320,
+        height: 50,
+      };
+    }
+
+    if (viewportWidth < 768) {
+      return {
+        key: '69262f5b442fb28c5f7e7f6e45e77911',
+        width: 468,
+        height: 60,
+      };
+    }
+
+    return {
+      key: '16b352bc065ab8d1387c99cc4c08f868',
+      width: 728,
+      height: 90,
+    };
+  }
+
+  if (type === 'rectangle') {
+    return {
+      key: '28ca4085a132e7009e4321c8f0eb39ba',
+      width: 300,
+      height: 250,
+    };
+  }
+
+  if (type === 'sidebar') {
+    if (viewportWidth < 1400) {
+      return null;
+    }
+
+    if (viewportHeight < 860) {
+      return {
+        key: '90262e5b9cbb8189ee3cc3b1b9c28782',
+        width: 160,
+        height: 300,
+      };
+    }
+
+    return {
+      key: 'cb54f8adcbd8dce1bf0489497277c920',
+      width: 160,
+      height: 600,
+    };
+  }
+
+  return null;
+}
+
+function enqueueIframeAd(work: () => Promise<void>) {
+  const next = iframeAdQueue.then(work).catch(() => undefined);
+  iframeAdQueue = next.then(() => undefined, () => undefined);
+  return next;
 }
 
 export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !containerRef.current) return;
+    const container = containerRef.current;
+
+    if (typeof window === 'undefined' || !container) return;
 
     // Clear previous elements to avoid duplication (especially in React 18+ Dev mode)
-    containerRef.current.innerHTML = '';
+    container.innerHTML = '';
 
-    let width = 300;
-    let height = 250;
-    let key = '';
-
-    if (type === 'banner') {
-      const w = window.innerWidth;
-      if (w < 468) {
-        key = 'c0e56ff887881c866dd9f0241b2ccb1c'; // Mobile Banner 320 x 50
-        width = 320;
-        height = 50;
-      } else if (w < 768) {
-        key = '69262f5b442fb28c5f7e7f6e45e77911'; // Tablet Banner 468 x 60
-        width = 468;
-        height = 60;
-      } else {
-        key = '16b352bc065ab8d1387c99cc4c08f868'; // Desktop Leaderboard 728 x 90
-        width = 728;
-        height = 90;
-      }
-    } else if (type === 'rectangle' || type === 'sidebar') {
-      // Reuses the 300x250 rectangle key since we don't yet have a
-      // dedicated skyscraper (160x600) key from the ad network. Swap
-      // this key once a properly-sized code is available.
-      key = '28ca4085a132e7009e4321c8f0eb39ba';
-      width = 300;
-      height = 250;
-    }
-
-    if (key) {
-      // 1. Create a script element containing the configuration options
-      const configScript = document.createElement('script');
-      configScript.type = 'text/javascript';
-      configScript.innerHTML = `
-        atOptions = {
-          'key' : '${key}',
-          'format' : 'iframe',
-          'height' : ${height},
-          'width' : ${width},
-          'params' : {}
-        };
-      `;
-      containerRef.current.appendChild(configScript);
-
-      // 2. Create the script element to invoke the ad network
-      const invokeScript = document.createElement('script');
-      invokeScript.type = 'text/javascript';
-      invokeScript.src = `https://www.highperformanceformat.com/${key}/invoke.js`;
-      invokeScript.async = true;
-      containerRef.current.appendChild(invokeScript);
-    } else if (type === 'bottom') {
-      // Native Banner Tag - relies on a container element + external script
+    if (type === 'bottom') {
       const divContainer = document.createElement('div');
       divContainer.id = 'container-ef76154fdc014c8ba62b33c2ad4525fa';
-      containerRef.current.appendChild(divContainer);
+      container.appendChild(divContainer);
 
       const nativeScript = document.createElement('script');
       nativeScript.type = 'text/javascript';
       nativeScript.src = 'https://pl30260318.effectivecpmnetwork.com/ef76154fdc014c8ba62b33c2ad4525fa/invoke.js';
       nativeScript.async = true;
       nativeScript.setAttribute('data-cfasync', 'false');
-      containerRef.current.appendChild(nativeScript);
+      container.appendChild(nativeScript);
+      return;
     }
+
+    const config = getIframeAdConfig(type, window.innerWidth, window.innerHeight);
+
+    if (!config) return;
+
+    let cancelled = false;
+
+    enqueueIframeAd(async () => {
+      if (cancelled || !container.isConnected) return;
+
+      container.innerHTML = '';
+
+      const configScript = document.createElement('script');
+      configScript.type = 'text/javascript';
+      configScript.innerHTML = `
+        atOptions = {
+          'key' : '${config.key}',
+          'format' : 'iframe',
+          'height' : ${config.height},
+          'width' : ${config.width},
+          'params' : {}
+        };
+      `;
+      container.appendChild(configScript);
+
+      const invokeScript = document.createElement('script');
+      invokeScript.type = 'text/javascript';
+      invokeScript.src = `https://www.highperformanceformat.com/${config.key}/invoke.js`;
+      invokeScript.async = false;
+      const loaded = new Promise<void>((resolve) => {
+        invokeScript.onload = () => resolve();
+        invokeScript.onerror = () => resolve();
+        window.setTimeout(resolve, 5000);
+      });
+
+      container.appendChild(invokeScript);
+      await loaded;
+    });
+
+    return () => {
+      cancelled = true;
+      container.innerHTML = '';
+    };
   }, [type]);
 
   // Setup layout heights to prevent Cumulative Layout Shift (CLS)
   let heightClass = 'h-[90px]';
   if (type === 'banner') {
     heightClass = 'h-[50px] sm:h-[60px] md:h-[90px]';
-  } else if (type === 'rectangle' || type === 'sidebar') {
+  } else if (type === 'rectangle') {
     heightClass = 'h-[250px]';
   } else if (type === 'bottom') {
     heightClass = 'min-h-[150px]';
+  } else if (type === 'sidebar') {
+    heightClass = 'h-[300px] 2xl:h-[600px]';
   }
+
+  const widthClass = type === 'sidebar' ? 'w-[160px]' : 'w-full';
 
   return (
     <div
       id={id}
-      className={`w-full my-6 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center relative overflow-hidden transition-all duration-200 ${heightClass} ${className}`}
+      className={`my-6 bg-slate-50 border border-slate-200 rounded-lg flex flex-col items-center justify-center relative overflow-hidden transition-all duration-200 ${widthClass} ${heightClass} ${className}`}
     >
       <div className="absolute top-1 left-2 text-[9px] font-semibold tracking-wider text-slate-400 uppercase select-none z-10">
         Advertisement
       </div>
-      <div ref={containerRef} className="w-full flex justify-center items-center"></div>
+      <div ref={containerRef} className="w-full h-full flex justify-center items-center"></div>
     </div>
   );
 }

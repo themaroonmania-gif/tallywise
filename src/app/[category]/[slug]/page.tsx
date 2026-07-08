@@ -4,6 +4,7 @@ import { calculators, CalculatorDef } from '@/config/calculators';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { AdSlot } from '@/components/common/AdSlot';
+import { SidebarAds } from '@/components/common/SidebarAds';
 import { calculatorComponents, ComingSoonCalculator } from '@/components/calculators/registry';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -96,7 +97,6 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
     'browserRequirements': 'Requires JavaScript. Requires HTML5.',
   };
 
-  const isFinance = calc.category === 'finance';
   const categoryBadgeColor =
     calc.category === 'finance'
       ? 'bg-emerald-550 text-white'
@@ -152,6 +152,7 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
       />
 
       <Header />
+      <SidebarAds />
 
       <main className="flex-1 bg-slate-50 py-8">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-6">
