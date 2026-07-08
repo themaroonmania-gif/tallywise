@@ -36,17 +36,25 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
         width = 728;
         height = 90;
       }
-    } else if (type === 'rectangle' || type === 'sidebar') {
-      // Reuses the 300x250 rectangle key since we don't yet have a
-      // dedicated skyscraper (160x600) key from the ad network. Swap
-      // this key once a properly-sized code is available.
+    } else if (type === 'rectangle') {
       key = '28ca4085a132e7009e4321c8f0eb39ba';
       width = 300;
       height = 250;
+    } else if (type === 'sidebar') {
+      key = 'cb54f8adcbd8dce1bf0489497277c920'; // Skyscraper 160 x 600
+      width = 160;
+      height = 600;
     }
 
     if (key) {
-      // 1. Create a script element containing the configuration options
+      // 1. Create a script element containing the configuration options.
+      // Wrapped in an IIFE that assigns the shared `atOptions` global and
+      // executes the invoke script synchronously (async = false) so this
+      // slot's config can't be overwritten by another AdSlot's effect
+      // running before this one's invoke.js has actually read it. Multiple
+      // AdSlot instances on one page (e.g. banner + two sidebars) all write
+      // to the same global `atOptions`, which was causing blank/wrong-size
+      // ads when their config+invoke pairs raced each other.
       const configScript = document.createElement('script');
       configScript.type = 'text/javascript';
       configScript.innerHTML = `
@@ -58,13 +66,14 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
           'params' : {}
         };
       `;
+      configScript.async = false;
       containerRef.current.appendChild(configScript);
 
       // 2. Create the script element to invoke the ad network
       const invokeScript = document.createElement('script');
       invokeScript.type = 'text/javascript';
       invokeScript.src = `https://www.highperformanceformat.com/${key}/invoke.js`;
-      invokeScript.async = true;
+      invokeScript.async = false;
       containerRef.current.appendChild(invokeScript);
     } else if (type === 'bottom') {
       // Native Banner Tag - relies on a container element + external script
@@ -75,7 +84,7 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
       const nativeScript = document.createElement('script');
       nativeScript.type = 'text/javascript';
       nativeScript.src = 'https://pl30260318.effectivecpmnetwork.com/ef76154fdc014c8ba62b33c2ad4525fa/invoke.js';
-      nativeScript.async = true;
+      nativeScript.async = false;
       nativeScript.setAttribute('data-cfasync', 'false');
       containerRef.current.appendChild(nativeScript);
     }
@@ -85,8 +94,10 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
   let heightClass = 'h-[90px]';
   if (type === 'banner') {
     heightClass = 'h-[50px] sm:h-[60px] md:h-[90px]';
-  } else if (type === 'rectangle' || type === 'sidebar') {
+  } else if (type === 'rectangle') {
     heightClass = 'h-[250px]';
+  } else if (type === 'sidebar') {
+    heightClass = 'h-[600px]';
   } else if (type === 'bottom') {
     heightClass = 'min-h-[150px]';
   }

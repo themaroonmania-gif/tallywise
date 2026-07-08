@@ -9,10 +9,10 @@ import { AdSlot } from './AdSlot';
 export function SidebarAds() {
   return (
     <>
-      <div className="hidden min-[1600px]:block fixed left-4 top-24 z-30 w-[300px]">
+      <div className="hidden min-[1600px]:block fixed left-4 top-24 z-30 w-[160px]">
         <AdSlot id="sidebar-left" type="sidebar" className="my-0" />
       </div>
-      <div className="hidden min-[1600px]:block fixed right-4 top-24 z-30 w-[300px]">
+      <div className="hidden min-[1600px]:block fixed right-4 top-24 z-30 w-[160px]">
         <AdSlot id="sidebar-right" type="sidebar" className="my-0" />
       </div>
     </>
