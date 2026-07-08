@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
-import { SidebarAds } from "@/components/common/SidebarAds";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -84,7 +83,6 @@ export default function RootLayout({
             gtag('config', 'G-LJ7KGGZLSY');
           `}
         </Script>
-        <SidebarAds />
         {children}
       </body>
     </html>
