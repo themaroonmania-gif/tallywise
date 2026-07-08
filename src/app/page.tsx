@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { calculators, CATEGORIES, CategoryKey } from '@/config/calculators';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
+import { AdSlot } from '@/components/common/AdSlot';
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,6 +23,7 @@ export default function Home() {
     if (cat === 'finance') return 'bg-emerald-500 text-white';
     if (cat === 'health') return 'bg-rose-500 text-white';
     if (cat === 'school') return 'bg-indigo-500 text-white';
+    if (cat === 'conversion') return 'bg-teal-500 text-white';
     return 'bg-amber-500 text-white';
   };
 
@@ -98,6 +100,8 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          <AdSlot id="home-mid" type="rectangle" />
 
           {/* Calculator Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

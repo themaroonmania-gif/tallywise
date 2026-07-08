@@ -37,6 +37,9 @@ export function Footer() {
               <li>
                 <Link href="/everyday" className="hover:text-slate-800 transition-colors">Everyday Utilities</Link>
               </li>
+              <li>
+                <Link href="/conversion" className="hover:text-slate-800 transition-colors">Unit Conversion</Link>
+              </li>
             </ul>
           </div>
 

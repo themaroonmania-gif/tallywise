@@ -1,0 +1,2 @@
+# Placeholder - populate with real ad network publisher IDs (Google AdSense pub-6227221633366697 and/or Adsterra) once confirmed
+google.com, pub-6227221633366697, DIRECT, f08c47fec0942fa0
