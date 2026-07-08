@@ -10,5 +10,15 @@
   ],
   "build": {
     "command": "npx opennextjs-cloudflare build"
-  }
+  },
+  "routes": [
+    {
+      "pattern": "tallywise.co",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.tallywise.co",
+      "custom_domain": true
+    }
+  ]
 }
