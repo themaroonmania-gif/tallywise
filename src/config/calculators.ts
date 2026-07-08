@@ -520,6 +520,260 @@ export const calculators: CalculatorDef[] = [
     relatedSlugs: ['bmi-calculator', 'calorie-calculator']
   },
   {
+    slug: 'bmr-calculator',
+    category: 'health',
+    name: 'BMR Calculator',
+    h1: 'BMR Calculator (Basal Metabolic Rate)',
+    seoTitle: 'BMR Calculator - Basal Metabolic Rate Estimator',
+    seoDescription: 'Calculate your Basal Metabolic Rate (BMR) using the Mifflin-St Jeor equation to find how many calories your body burns at rest.',
+    formulaDescription: 'Men: BMR = 10 x weight(kg) + 6.25 x height(cm) - 5 x age + 5. Women: BMR = 10 x weight(kg) + 6.25 x height(cm) - 5 x age - 161.',
+    explainerHtml: `
+      <p>Your Basal Metabolic Rate (BMR) is the number of calories your body needs to maintain basic life functions - breathing, circulation, and cell production - while completely at rest. It does not include any calories burned through movement or digestion.</p>
+      <h3>The Mifflin-St Jeor Equation</h3>
+      <p>This calculator uses the Mifflin-St Jeor equation, widely considered the most accurate BMR formula for most adults. It factors in weight, height, age, and biological sex.</p>
+      <h3>BMR vs. TDEE</h3>
+      <p>BMR only measures calories burned at complete rest. Total Daily Energy Expenditure (TDEE) multiplies BMR by an activity factor to estimate your true daily calorie needs for weight maintenance, loss, or gain.</p>
+    `,
+    faqs: [
+      { question: 'What is the difference between BMR and TDEE?', answer: 'BMR is the calories your body burns at total rest. TDEE adds in calories burned through daily activity and exercise, and is the number most people should use for calorie planning.' },
+      { question: 'Which BMR formula is most accurate?', answer: 'The Mifflin-St Jeor equation, used here, is generally considered more accurate than the older Harris-Benedict formula for most modern populations.' },
+      { question: 'Can I use my BMR to lose weight?', answer: 'BMR alone is not enough for weight loss planning. Use it as an input to a TDEE calculation, then create a moderate calorie deficit from your TDEE.' }
+    ],
+    relatedSlugs: ['calorie-calculator', 'ideal-weight-calculator', 'bmi-calculator']
+  },
+  {
+    slug: 'ideal-weight-calculator',
+    category: 'health',
+    name: 'Ideal Weight Calculator',
+    h1: 'Ideal Weight Calculator',
+    seoTitle: 'Ideal Weight Calculator - Devine & Robinson Formulas',
+    seoDescription: 'Estimate your ideal body weight based on height and sex using the Devine and Robinson clinical formulas.',
+    formulaDescription: 'Devine (Men): 50kg + 2.3kg per inch over 5ft. Devine (Women): 45.5kg + 2.3kg per inch over 5ft.',
+    explainerHtml: `
+      <p>Ideal body weight (IBW) formulas were originally developed for clinical drug dosing, but are commonly used as a general reference point for a healthy weight range based on height.</p>
+      <h3>Devine Formula</h3>
+      <p>The most widely used clinical formula, developed in 1974 and still used today to estimate medication dosages based on lean body mass.</p>
+      <h3>Robinson Formula</h3>
+      <p>A 1983 refinement of the Devine formula shown here as a second reference point, since no single formula perfectly fits every body type.</p>
+    `,
+    faqs: [
+      { question: 'Are ideal weight formulas accurate for everyone?', answer: 'No. These formulas were designed for general clinical reference and do not account for muscle mass, bone density, or frame size, so athletes and very muscular individuals may fall well outside the estimated range while still being healthy.' },
+      { question: 'Why do the Devine and Robinson formulas give different results?', answer: 'They were derived from different population studies. Robinson generally produces a slightly higher estimate than Devine, so use the range between them as a rough guide rather than a precise target.' },
+      { question: 'Should I try to hit my exact ideal weight?', answer: 'Not necessarily. These are population averages. A healthier approach is to consider body composition, waist-to-hip ratio, and how you feel rather than chasing one precise number.' }
+    ],
+    relatedSlugs: ['bmi-calculator', 'body-frame-size-calculator', 'waist-hip-ratio-calculator']
+  },
+  {
+    slug: 'body-frame-size-calculator',
+    category: 'health',
+    name: 'Body Frame Size Calculator',
+    h1: 'Body Frame Size Calculator',
+    seoTitle: 'Body Frame Size Calculator - Small, Medium, or Large Frame',
+    seoDescription: 'Determine whether you have a small, medium, or large body frame using the height-to-wrist-circumference ratio method.',
+    formulaDescription: 'Frame Ratio = Height (in) / Wrist Circumference (in), classified against standard male/female thresholds.',
+    explainerHtml: `
+      <p>Body frame size is a rough proxy for bone structure, and is often used alongside ideal weight formulas since a "healthy weight" varies by frame size - a large-framed person naturally carries more bone and muscle mass than a small-framed person of the same height.</p>
+      <h3>Wrist Circumference Method</h3>
+      <p>This calculator uses the height-to-wrist-circumference ratio, one of the most common non-clinical methods for estimating frame size, since wrist bone size correlates loosely with overall skeletal size.</p>
+    `,
+    faqs: [
+      { question: 'How do I measure my wrist circumference?', answer: 'Wrap a flexible tape measure snugly around your wrist, just below the wrist bone (where a watch would sit), and record the measurement in inches or centimeters.' },
+      { question: 'Why does frame size matter for weight goals?', answer: 'Ideal weight charts and BMI both assume an average frame. A large-framed person may healthily weigh more than a small-framed person of the same height without carrying more body fat.' },
+      { question: 'Is this an exact measurement?', answer: 'No, it is only a rough estimate based on bone structure proxies. It does not account for individual variation and should not replace a clinical body composition assessment.' }
+    ],
+    relatedSlugs: ['ideal-weight-calculator', 'bmi-calculator', 'waist-hip-ratio-calculator']
+  },
+  {
+    slug: 'waist-hip-ratio-calculator',
+    category: 'health',
+    name: 'Waist-to-Hip Ratio Calculator',
+    h1: 'Waist-to-Hip Ratio Calculator',
+    seoTitle: 'Waist-to-Hip Ratio Calculator - WHO Risk Category',
+    seoDescription: 'Calculate your waist-to-hip ratio (WHR) and see your World Health Organization cardiovascular risk category.',
+    formulaDescription: 'WHR = Waist Circumference / Hip Circumference.',
+    explainerHtml: `
+      <p>Waist-to-hip ratio (WHR) compares the circumference of your waist to your hips, and is used by the World Health Organization as an indicator of abdominal fat distribution and associated cardiovascular risk.</p>
+      <h3>Why Fat Distribution Matters</h3>
+      <p>Fat stored around the abdomen (an "apple" shape) is more strongly linked to cardiovascular and metabolic risk than fat stored around the hips and thighs (a "pear" shape), even at the same overall body weight.</p>
+      <h3>WHO Risk Thresholds</h3>
+      <p>The World Health Organization classifies risk differently for men and women, since healthy fat distribution differs by sex.</p>
+    `,
+    faqs: [
+      { question: 'How do I measure my waist and hips correctly?', answer: 'Measure your waist at the narrowest point, usually just above the belly button, and your hips at the widest point around your buttocks. Keep the tape measure snug but not compressing the skin.' },
+      { question: 'What is a healthy waist-to-hip ratio?', answer: 'The WHO considers a WHR below 0.90 for men and below 0.80 for women to be low risk. Higher ratios indicate more abdominal fat and higher associated cardiovascular risk.' },
+      { question: 'Is WHR better than BMI?', answer: 'WHR captures fat distribution, which BMI does not. Many researchers consider WHR a better predictor of cardiovascular risk than BMI alone, though using both together gives a fuller picture.' }
+    ],
+    relatedSlugs: ['bmi-calculator', 'body-fat-calculator', 'ideal-weight-calculator']
+  },
+  {
+    slug: 'heart-rate-zone-calculator',
+    category: 'health',
+    name: 'Heart Rate Zone Calculator',
+    h1: 'Heart Rate Zone Calculator',
+    seoTitle: 'Heart Rate Zone Calculator - Target HR Training Zones',
+    seoDescription: 'Find your target heart rate training zones for warm-up, fat burn, cardio, and max-effort workouts based on your age.',
+    formulaDescription: 'Max Heart Rate = 220 - Age. Zones are calculated as percentage ranges of max heart rate.',
+    explainerHtml: `
+      <p>Training in specific heart rate zones helps you target different fitness goals, from easy recovery workouts to maximum-effort intervals. This calculator estimates your maximum heart rate and breaks it into five common training zones.</p>
+      <h3>The Five Heart Rate Zones</h3>
+      <ul>
+        <li><strong>Zone 1 (50-60%):</strong> Very light activity, warm-up and recovery.</li>
+        <li><strong>Zone 2 (60-70%):</strong> Light aerobic activity, primary fat-burning zone.</li>
+        <li><strong>Zone 3 (70-80%):</strong> Moderate cardio, improves aerobic fitness.</li>
+        <li><strong>Zone 4 (80-90%):</strong> Hard effort, improves speed and performance.</li>
+        <li><strong>Zone 5 (90-100%):</strong> Maximum effort, short bursts only.</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How accurate is the 220 minus age formula?', answer: 'It is a widely used population-average estimate, but individual maximum heart rate can vary by 10-20 beats per minute. A supervised fitness test gives a more precise number if you need one.' },
+      { question: 'Which zone should I train in to lose weight?', answer: 'Zone 2 is often called the "fat-burning zone" because a higher percentage of calories burned come from fat, but total calories burned matters more for weight loss than which zone you train in.' },
+      { question: 'Is it safe to train in Zone 5?', answer: 'Zone 5 is very demanding and generally recommended only in short intervals for people who are already fit. Consult a doctor before starting high-intensity training if you have any cardiovascular concerns.' }
+    ],
+    relatedSlugs: ['bmr-calculator', 'calorie-calculator', 'bmi-calculator']
+  },
+  {
+    slug: 'ovulation-calculator',
+    category: 'health',
+    name: 'Ovulation Calculator',
+    h1: 'Ovulation & Fertility Window Calculator',
+    seoTitle: 'Ovulation Calculator - Fertility Window Estimator',
+    seoDescription: 'Estimate your ovulation date and fertile window based on the first day of your last period and average cycle length.',
+    formulaDescription: 'Ovulation date = Next period date - 14 days. Fertile window = 5 days before ovulation through ovulation day.',
+    explainerHtml: `
+      <p>This calculator estimates your ovulation date and fertile window using the standard luteal-phase method, where ovulation typically occurs about 14 days before your next period begins.</p>
+      <h3>Understanding Your Fertile Window</h3>
+      <p>Sperm can survive in the reproductive tract for up to 5 days, while an egg is typically viable for only 12-24 hours after ovulation. This creates a fertile window of about 6 days, ending on ovulation day.</p>
+    `,
+    faqs: [
+      { question: 'How accurate is this ovulation estimate?', answer: 'It is based on average cycle statistics and works best for people with regular, predictable cycles. Actual ovulation timing can vary due to stress, illness, and other factors, so ovulation predictor kits or tracking basal body temperature give more precise results.' },
+      { question: 'What if my cycle length varies month to month?', answer: 'Use your average cycle length over the past several months for the best estimate, and consider tracking symptoms like cervical mucus changes or basal body temperature for more accuracy.' },
+      { question: 'Can I use this to avoid pregnancy?', answer: 'This calculator is intended for general fertility awareness and is not a reliable form of contraception. Consult a healthcare provider about effective birth control methods.' }
+    ],
+    relatedSlugs: ['menstrual-cycle-calculator', 'conception-date-calculator', 'pregnancy-due-date']
+  },
+  {
+    slug: 'conception-date-calculator',
+    category: 'health',
+    name: 'Conception Date Calculator',
+    h1: 'Conception Date Calculator',
+    seoTitle: 'Conception Date Calculator - Estimate When You Conceived',
+    seoDescription: 'Estimate your approximate conception date based on your last menstrual period or your estimated due date.',
+    formulaDescription: 'From LMP: Conception date = Last period start date + 14 days. From due date: Conception date = Due date - 266 days.',
+    explainerHtml: `
+      <p>This calculator provides a rough estimate of when conception likely occurred, using either the first day of your last menstrual period (LMP) or your estimated due date as a starting point.</p>
+      <h3>Why This Is an Estimate</h3>
+      <p>Conception typically occurs around ovulation, roughly 14 days after the start of a period in an average 28-day cycle. Since actual ovulation timing varies by individual and cycle length, the true conception date can differ from this estimate by several days.</p>
+    `,
+    faqs: [
+      { question: 'How is conception date different from due date?', answer: 'Due dates are typically calculated as 280 days (40 weeks) from the last menstrual period, while conception usually occurs about 2 weeks into that cycle, roughly 266 days before the due date.' },
+      { question: 'Can this tell me the exact date I conceived?', answer: 'No. This is a statistical estimate based on average cycle timing. Only a fertility specialist tracking ovulation directly, such as through an IVF cycle, can pinpoint an exact conception date.' },
+      { question: 'What if I have an irregular cycle?', answer: 'Irregular cycles make this estimate less reliable, since ovulation timing is harder to predict. An early ultrasound during pregnancy can give a more accurate gestational age estimate.' }
+    ],
+    relatedSlugs: ['pregnancy-due-date', 'ovulation-calculator', 'pregnancy-weight-gain-calculator']
+  },
+  {
+    slug: 'child-growth-percentile-calculator',
+    category: 'health',
+    name: 'Child Growth Percentile Calculator',
+    h1: 'Child Growth Percentile Calculator',
+    seoTitle: 'Child Growth Calculator - Height & Weight Estimate by Age',
+    seoDescription: 'Get a simplified estimate of whether your child\'s height and weight fall below, at, or above the typical average for their age.',
+    formulaDescription: 'Compares child height/weight against simplified average-by-age reference bands (not clinical percentile curves).',
+    explainerHtml: `
+      <p>This tool gives a simplified, approximate comparison of your child's height and weight against typical average values for their age. It is designed as a quick, general reference only.</p>
+      <h3>Not a Clinical Growth Chart</h3>
+      <p>Pediatricians use detailed CDC or WHO growth percentile charts, which track a child's growth trajectory over time relative to thousands of data points. This calculator uses a simplified banding approach (below average, average, above average) and cannot replace those clinical tools.</p>
+    `,
+    faqs: [
+      { question: 'Is this the same as the percentile chart my pediatrician uses?', answer: 'No. This is a simplified estimate for general reference only. Your pediatrician\'s growth chart tracks your child\'s specific growth trajectory over time using clinical CDC or WHO percentile data, which is far more precise.' },
+      { question: 'My child is "below average" - should I be worried?', answer: 'Not necessarily. Height and weight vary widely between healthy children. A single measurement matters less than a consistent growth trend over time, which only your pediatrician can properly assess.' },
+      { question: 'Does this account for premature birth?', answer: 'No, this simplified tool does not adjust for gestational age. Premature babies are typically measured against adjusted-age growth charts by their pediatrician.' }
+    ],
+    relatedSlugs: ['baby-weight-gain-calculator', 'bmi-calculator', 'pregnancy-due-date']
+  },
+  {
+    slug: 'baby-weight-gain-calculator',
+    category: 'health',
+    name: 'Baby Weight Gain Calculator',
+    h1: 'Baby Weight Gain Tracker',
+    seoTitle: 'Baby Weight Gain Calculator - Newborn Growth Tracker',
+    seoDescription: 'Track how much weight your newborn has gained since birth and compare it to typical newborn weight gain rates.',
+    formulaDescription: 'Weight Gained = Current Weight - Birth Weight. Average Gain per Week = Weight Gained / Weeks Since Birth.',
+    explainerHtml: `
+      <p>Newborns typically lose a small amount of weight in their first days, then gain steadily. This calculator tracks total weight gained since birth and compares your baby's average weekly gain to a typical benchmark.</p>
+      <h3>Typical Newborn Weight Gain</h3>
+      <p>In the first few months, healthy newborns typically gain about 5 to 7 ounces (roughly 150 to 200 grams) per week, though this varies by feeding method, birth weight, and individual growth patterns.</p>
+    `,
+    faqs: [
+      { question: 'Is it normal for a newborn to lose weight at first?', answer: 'Yes. Most newborns lose 5-10% of their birth weight in the first few days, then typically regain it by about two weeks of age. This calculator is most useful once your baby is past that initial regain period.' },
+      { question: 'What if my baby\'s weight gain is below the typical range?', answer: 'Slower weight gain can be normal for some babies, but it can also signal a feeding issue. Contact your pediatrician if your baby is consistently gaining below the typical range.' },
+      { question: 'Does feeding method affect weight gain rate?', answer: 'Yes, formula-fed and breastfed babies can have slightly different typical growth patterns, especially after the first few months. Your pediatrician can advise on what is normal for your baby.' }
+    ],
+    relatedSlugs: ['child-growth-percentile-calculator', 'pregnancy-due-date', 'pregnancy-weight-gain-calculator']
+  },
+  {
+    slug: 'menstrual-cycle-calculator',
+    category: 'health',
+    name: 'Menstrual Cycle Calculator',
+    h1: 'Menstrual Cycle Calculator',
+    seoTitle: 'Period Calculator - Predict Your Next 3 Menstrual Cycles',
+    seoDescription: 'Predict your next three period start dates and fertile windows based on your last period and average cycle length.',
+    formulaDescription: 'Next Period = Last Period Start + (Cycle Length x N). Ovulation Window = Period Start - 14 days, minus a 5-day fertile window.',
+    explainerHtml: `
+      <p>This calculator predicts your next three menstrual cycles based on the first day of your last period and your average cycle length, giving you both period start dates and estimated fertile windows for planning.</p>
+      <h3>How Cycle Prediction Works</h3>
+      <p>Menstrual cycles are counted from the first day of one period to the first day of the next. By projecting forward using your average cycle length, this tool estimates your next few period dates.</p>
+    `,
+    faqs: [
+      { question: 'How far in advance can I predict my period?', answer: 'This calculator projects three cycles ahead, but accuracy decreases the further out you go, especially if your cycle length varies naturally month to month.' },
+      { question: 'What is a normal cycle length?', answer: 'A normal menstrual cycle typically ranges from 21 to 35 days, with 28 days being the commonly cited average. Consistently tracking your own cycles gives the most accurate personal average.' },
+      { question: 'Why do my predictions seem off some months?', answer: 'Stress, illness, travel, and hormonal changes can all shift ovulation and period timing. This tool provides a statistical estimate, not a guarantee.' }
+    ],
+    relatedSlugs: ['ovulation-calculator', 'conception-date-calculator', 'pregnancy-due-date']
+  },
+  {
+    slug: 'pregnancy-weight-gain-calculator',
+    category: 'health',
+    name: 'Pregnancy Weight Gain Calculator',
+    h1: 'Pregnancy Weight Gain Calculator',
+    seoTitle: 'Pregnancy Weight Gain Calculator - IOM Recommended Ranges',
+    seoDescription: 'Find your recommended total pregnancy weight gain range based on your pre-pregnancy BMI, using Institute of Medicine guidelines.',
+    formulaDescription: 'Recommended total gain by pre-pregnancy BMI category (IOM guidelines): Underweight 28-40 lbs, Normal 25-35 lbs, Overweight 15-25 lbs, Obese 11-20 lbs.',
+    explainerHtml: `
+      <p>The Institute of Medicine (IOM) publishes recommended total pregnancy weight gain ranges based on a person's BMI before pregnancy, since a healthy amount of weight gain differs depending on starting weight.</p>
+      <h3>Why Pre-Pregnancy BMI Matters</h3>
+      <p>Someone who starts pregnancy underweight is generally advised to gain more than someone who starts overweight, to support healthy fetal development while managing maternal health risks.</p>
+    `,
+    faqs: [
+      { question: 'Does this apply to twin pregnancies?', answer: 'No, these ranges are for singleton pregnancies. Recommended weight gain for twin or multiple pregnancies is higher and should be discussed with your OB-GYN.' },
+      { question: 'What if I am gaining faster or slower than recommended?', answer: 'Some variation is normal, especially early or late in pregnancy. Consistently gaining well above or below the recommended range is worth discussing with your healthcare provider.' },
+      { question: 'Is the "gain so far" estimate exact?', answer: 'No, it uses a simplified linear pacing model. Actual healthy weight gain is typically slower in the first trimester and faster in the second and third, so use it as a rough guide only.' }
+    ],
+    relatedSlugs: ['pregnancy-due-date', 'bmi-calculator', 'conception-date-calculator']
+  },
+  {
+    slug: 'menopause-age-calculator',
+    category: 'health',
+    name: 'Menopause Age Calculator',
+    h1: 'Menopause Age Estimator',
+    seoTitle: 'Menopause Age Calculator - Estimate Your Menopause Timing',
+    seoDescription: 'Get a rough statistical estimate of when you might reach menopause based on average age, genetics, and smoking status.',
+    formulaDescription: 'Estimate centers on the average menopause age of 51, weighted toward mother\'s age at menopause, adjusted down 1.5 years for smokers.',
+    explainerHtml: `
+      <p>This calculator gives a rough statistical estimate of when you might reach menopause, based on the average age of menopause and known risk factors like genetics and smoking.</p>
+      <h3>Genetics Is the Strongest Predictor</h3>
+      <p>Research consistently shows that the age your mother reached menopause is one of the strongest predictors of when you will, more so than lifestyle factors in most cases.</p>
+      <h3>The Role of Smoking</h3>
+      <p>Studies show smokers tend to reach menopause about 1 to 2 years earlier on average than non-smokers, likely due to the effect of smoking on ovarian function.</p>
+    `,
+    faqs: [
+      { question: 'How accurate is this estimate?', answer: 'This is a rough statistical estimate based on population averages and known predictors, not a medical prediction. Individual timing can vary widely due to factors this calculator does not account for.' },
+      { question: 'What is the average age of menopause?', answer: 'The average age of natural menopause in the United States is 51, though it commonly occurs anywhere between 45 and 55.' },
+      { question: 'What is perimenopause?', answer: 'Perimenopause is the transitional period leading up to menopause, often starting several years earlier, during which hormone levels fluctuate and symptoms like irregular periods can begin.' }
+    ],
+    relatedSlugs: ['menstrual-cycle-calculator', 'bmi-calculator', 'waist-hip-ratio-calculator']
+  },
+  {
     slug: 'final-grade-calculator',
     category: 'school',
     name: 'Final Exam Grade Calculator',
@@ -578,6 +832,28 @@ export const calculators: CalculatorDef[] = [
     explainerHtml: '<p>Find equivalent times across different international time zones and plan meetings.</p>',
     faqs: [],
     relatedSlugs: ['date-difference-calculator', 'age-calculator']
+  },
+  {
+    slug: 'online-ruler',
+    category: 'everyday',
+    name: 'Online Ruler',
+    h1: 'Online Ruler - Measure On Screen',
+    seoTitle: 'Online Ruler - Measure Real-World Size With Your Screen',
+    seoDescription: 'Turn your phone or computer screen into a ruler. Measure objects in inches and centimeters directly on screen, with optional credit-card calibration for extra accuracy.',
+    formulaDescription: 'Default scale uses the CSS specification of 96px = 1 logical inch. Calibration mode recalculates px-per-inch from a known 3.370in credit card width.',
+    explainerHtml: `
+      <p>This tool turns your phone, tablet, or computer screen into a ruler you can hold up to a real object, showing accurate inch and centimeter markings.</p>
+      <h3>Why Calibration Matters</h3>
+      <p>Browsers don't expose your screen's true physical size, so by default this ruler uses the CSS specification's assumption of 96 pixels per inch, which is reasonably accurate on many laptop and desktop monitors at 100% browser zoom, but can be noticeably off on phones, tablets, and high-resolution displays.</p>
+      <h3>One-Tap Credit Card Calibration</h3>
+      <p>For an exact match on your specific device, tap Calibrate and hold any standard credit or debit card (which are a standardized 3.370 inches wide worldwide) up to the on-screen rectangle. Use the +/- buttons to nudge it until it matches your card exactly, then save - your calibration is remembered on this device for next time.</p>
+    `,
+    faqs: [
+      { question: 'Does this work on both phones and computers?', answer: 'Yes. The same credit-card calibration method works on any screen, since it measures your specific screen\'s actual pixel density rather than relying on the device type.' },
+      { question: 'How accurate is it without calibrating?', answer: 'The default scale assumes 96 pixels per logical inch, the standard used by CSS. This is often close on desktop monitors at default zoom, but can be meaningfully off on phones and high-DPI screens, so calibrating with a card is recommended for precise measurements.' },
+      { question: 'Why does zooming my browser affect accuracy?', answer: 'Zooming in or out changes how many physical pixels represent one logical CSS pixel, which shifts the ruler\'s real-world scale. Keep your browser at 100% zoom, or recalibrate after changing zoom level, for the most accurate results.' }
+    ],
+    relatedSlugs: ['length-converter', 'cm-to-inches-converter', 'unit-converter']
   },
   // --- CONVERSION ---
   {
