@@ -1,13 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tallywise",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-07-08",
-  "observability": {
-    "enabled": true
-  },
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "assets": {
+    "directory": ".open-next/assets"
+  },
+  "observability": {
+    "enabled": true
+  },
   "build": {
     "command": "npx opennextjs-cloudflare build"
   },
