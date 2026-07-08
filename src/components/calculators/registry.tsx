@@ -12,7 +12,25 @@ import { AgeCalculator } from './AgeCalculator';
 import { PercentageCalculator } from './PercentageCalculator';
 import { DiscountCalculator } from './DiscountCalculator';
 
-// Registry of fully interactive calculator components
+// Import remaining calculators
+import { AutoLoanCalculator } from './AutoLoanCalculator';
+import { PersonalLoanCalculator } from './PersonalLoanCalculator';
+import { SalesTaxCalculator } from './SalesTaxCalculator';
+import { CompoundInterestCalculator } from './CompoundInterestCalculator';
+import { RetirementCalculator } from './RetirementCalculator';
+import { DebtPayoffCalculator } from './DebtPayoffCalculator';
+import { CreditCardCalculator } from './CreditCardCalculator';
+import { WeightLossCalculator } from './WeightLossCalculator';
+import { PregnancyCalculator } from './PregnancyCalculator';
+import { BodyFatCalculator } from './BodyFatCalculator';
+import { WaterIntakeCalculator } from './WaterIntakeCalculator';
+import { FinalGradeCalculator } from './FinalGradeCalculator';
+import { GradeCurveCalculator } from './GradeCurveCalculator';
+import { DateDifferenceCalculator } from './DateDifferenceCalculator';
+import { UnitConverter } from './UnitConverter';
+import { TimeZoneCalculator } from './TimeZoneCalculator';
+
+// Registry mapping slug names to their React components
 export const calculatorComponents: Record<string, React.ComponentType> = {
   'paycheck-calculator': PaycheckCalculator,
   'mortgage-calculator': MortgageCalculator,
@@ -24,9 +42,27 @@ export const calculatorComponents: Record<string, React.ComponentType> = {
   'age-calculator': AgeCalculator,
   'percentage-calculator': PercentageCalculator,
   'discount-calculator': DiscountCalculator,
+  
+  // Register newly implemented calculators
+  'auto-loan-calculator': AutoLoanCalculator,
+  'personal-loan-calculator': PersonalLoanCalculator,
+  'sales-tax-calculator': SalesTaxCalculator,
+  'compound-interest-calculator': CompoundInterestCalculator,
+  'retirement-calculator': RetirementCalculator,
+  'debt-payoff-calculator': DebtPayoffCalculator,
+  'credit-card-calculator': CreditCardCalculator,
+  'calorie-loss-calculator': WeightLossCalculator,
+  'pregnancy-due-date': PregnancyCalculator,
+  'body-fat-calculator': BodyFatCalculator,
+  'water-intake-calculator': WaterIntakeCalculator,
+  'final-grade-calculator': FinalGradeCalculator,
+  'grade-curve-calculator': GradeCurveCalculator,
+  'date-difference-calculator': DateDifferenceCalculator,
+  'unit-converter': UnitConverter,
+  'time-zone-calculator': TimeZoneCalculator,
 };
 
-// Beautiful Coming Soon component to display for the other 15 calculators, keeping the page crawlable and indexed
+// Beautiful Coming Soon component to display for any unmapped calculator (if any are added in the future)
 export function ComingSoonCalculator({
   name,
   formula,

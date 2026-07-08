@@ -85,18 +85,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
           {/* Calculator Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {categoryCalculators.map((calc) => {
-              const isInteractive = [
-                'paycheck-calculator',
-                'mortgage-calculator',
-                'tip-calculator',
-                'gpa-calculator',
-                'grade-calculator',
-                'bmi-calculator',
-                'calorie-calculator',
-                'age-calculator',
-                'percentage-calculator',
-                'discount-calculator',
-              ].includes(calc.slug);
+              const isInteractive = true;
 
               return (
                 <Link
