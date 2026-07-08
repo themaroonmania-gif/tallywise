@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { PaycheckCalculator } from './PaycheckCalculator';
 import { MortgageCalculator } from './MortgageCalculator';
