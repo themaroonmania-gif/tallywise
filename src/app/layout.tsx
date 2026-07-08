@@ -28,13 +28,15 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        {/* Google AdSense Verification Tag */}
-        <Script
+      <head>
+        {/* Google AdSense Verification Tag (Critical: must be in raw HTML head for crawler detection) */}
+        <script
+          async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6227221633366697"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
         />
+      </head>
+      <body className="min-h-full flex flex-col">
         {/* Google Analytics 4 (gtag.js) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-LJ7KGGZLSY"
