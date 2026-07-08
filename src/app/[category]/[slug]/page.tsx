@@ -187,9 +187,6 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
             )}
           </div>
 
-          {/* Ad Slot #2 - directly below calculator, above explainer */}
-          <AdSlot id="below-tool" type="rectangle" />
-
           {/* Explainer Content Section */}
           <article className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 space-y-6 shadow-sm">
             <div className="prose prose-slate max-w-none prose-sm leading-relaxed prose-headings:font-extrabold prose-headings:text-slate-800 prose-h3:text-sm prose-h3:uppercase prose-h3:tracking-wide prose-h3:text-slate-400 prose-ul:list-disc prose-ul:pl-5 text-slate-600 font-medium">
