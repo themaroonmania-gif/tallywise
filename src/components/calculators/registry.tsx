@@ -28,6 +28,31 @@ import { DateDifferenceCalculator } from './DateDifferenceCalculator';
 import { UnitConverter } from './UnitConverter';
 import { TimeZoneCalculator } from './TimeZoneCalculator';
 
+// Conversion category calculators
+import { LengthConverter } from './conversion/LengthConverter';
+import { CmToInchesConverter } from './conversion/CmToInchesConverter';
+import { WeightConverter } from './conversion/WeightConverter';
+import { TemperatureConverter } from './conversion/TemperatureConverter';
+import { VolumeConverter } from './conversion/VolumeConverter';
+import { AreaConverter } from './conversion/AreaConverter';
+import { SpeedConverter } from './conversion/SpeedConverter';
+import { PressureConverter } from './conversion/PressureConverter';
+import { ForceConverter } from './conversion/ForceConverter';
+import { PpmCalculator } from './conversion/PpmCalculator';
+import { AcreageCalculator } from './conversion/AcreageCalculator';
+import { CurrencyConverter } from './conversion/CurrencyConverter';
+import { TimeConverter } from './conversion/TimeConverter';
+import { DataStorageConverter } from './conversion/DataStorageConverter';
+import { EnergyConverter } from './conversion/EnergyConverter';
+import { AngleConverter } from './conversion/AngleConverter';
+import { FuelEconomyConverter } from './conversion/FuelEconomyConverter';
+import { CookingConverter } from './conversion/CookingConverter';
+import { DensityConverter } from './conversion/DensityConverter';
+import { PowerConverter } from './conversion/PowerConverter';
+import { TorqueConverter } from './conversion/TorqueConverter';
+import { ShoeSizeConverter } from './conversion/ShoeSizeConverter';
+import { ClothingSizeConverter } from './conversion/ClothingSizeConverter';
+
 // Registry mapping slug names to their React components
 export const calculatorComponents: Record<string, React.ComponentType> = {
   'paycheck-calculator': PaycheckCalculator,
@@ -58,6 +83,31 @@ export const calculatorComponents: Record<string, React.ComponentType> = {
   'date-difference-calculator': DateDifferenceCalculator,
   'unit-converter': UnitConverter,
   'time-zone-calculator': TimeZoneCalculator,
+
+  // Conversion category
+  'length-converter': LengthConverter,
+  'cm-to-inches-converter': CmToInchesConverter,
+  'weight-converter': WeightConverter,
+  'temperature-converter': TemperatureConverter,
+  'volume-converter': VolumeConverter,
+  'area-converter': AreaConverter,
+  'speed-converter': SpeedConverter,
+  'pressure-converter': PressureConverter,
+  'force-converter': ForceConverter,
+  'ppm-calculator': PpmCalculator,
+  'acreage-calculator': AcreageCalculator,
+  'currency-converter': CurrencyConverter,
+  'time-converter': TimeConverter,
+  'data-storage-converter': DataStorageConverter,
+  'energy-converter': EnergyConverter,
+  'angle-converter': AngleConverter,
+  'fuel-economy-converter': FuelEconomyConverter,
+  'cooking-converter': CookingConverter,
+  'density-converter': DensityConverter,
+  'power-converter': PowerConverter,
+  'torque-converter': TorqueConverter,
+  'shoe-size-converter': ShoeSizeConverter,
+  'clothing-size-converter': ClothingSizeConverter,
 };
 
 // Beautiful Coming Soon component to display for any unmapped calculator (if any are added in the future)

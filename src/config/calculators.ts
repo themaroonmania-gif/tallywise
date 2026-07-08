@@ -1,6 +1,6 @@
 export interface CalculatorDef {
   slug: string;
-  category: 'finance' | 'health' | 'school' | 'everyday';
+  category: 'finance' | 'health' | 'school' | 'everyday' | 'conversion';
   name: string;
   seoTitle: string;
   seoDescription: string;
@@ -35,6 +35,12 @@ export const CATEGORIES = {
     description: 'Calculate differences in dates, exact age, percentages, and unit conversions.',
     color: 'amber',
     iconName: 'Calculator',
+  },
+  conversion: {
+    name: 'Conversion',
+    description: 'Convert length, weight, temperature, volume, and more between units instantly.',
+    color: 'teal',
+    iconName: 'ArrowLeftRight',
   },
 } as const;
 
@@ -559,7 +565,7 @@ export const calculators: CalculatorDef[] = [
     formulaDescription: 'Standard conversion formulas (e.g. °F = °C * 9/5 + 32, 1 inch = 2.54 cm).',
     explainerHtml: '<p>Quickly convert values between imperial and metric systems for temperature, weight, distance, and more.</p>',
     faqs: [],
-    relatedSlugs: ['percentage-calculator', 'date-difference-calculator']
+    relatedSlugs: ['percentage-calculator', 'date-difference-calculator', 'length-converter', 'weight-converter', 'temperature-converter']
   },
   {
     slug: 'time-zone-calculator',
@@ -572,5 +578,565 @@ export const calculators: CalculatorDef[] = [
     explainerHtml: '<p>Find equivalent times across different international time zones and plan meetings.</p>',
     faqs: [],
     relatedSlugs: ['date-difference-calculator', 'age-calculator']
+  },
+  // --- CONVERSION ---
+  {
+    slug: 'length-converter',
+    category: 'conversion',
+    name: 'Length Converter',
+    h1: 'Length Converter',
+    seoTitle: 'Length Converter - Meters, Feet, Miles, Inches & More',
+    seoDescription: 'Convert length and distance instantly between meters, kilometers, miles, feet, inches, yards, and centimeters.',
+    formulaDescription: 'All lengths are converted through a common base unit (meters). 1 inch = 2.54 cm, 1 mile = 1.609344 km.',
+    explainerHtml: `
+      <p>A length converter lets you switch between metric and imperial distance units instantly, whether you are working on a construction project, following a recipe from another country, or converting a road trip distance.</p>
+      <h3>Common Length Conversions</h3>
+      <ul>
+        <li><strong>1 inch</strong> = 2.54 centimeters</li>
+        <li><strong>1 foot</strong> = 0.3048 meters</li>
+        <li><strong>1 mile</strong> = 1.609344 kilometers</li>
+        <li><strong>1 yard</strong> = 0.9144 meters</li>
+      </ul>
+      <h3>Metric vs. Imperial</h3>
+      <p>Most of the world uses the metric system (meters, kilometers, centimeters), while the United States primarily uses imperial units (feet, inches, miles, yards). This converter bridges both systems in one tool.</p>
+    `,
+    faqs: [
+      { question: 'How many centimeters are in an inch?', answer: 'There are exactly 2.54 centimeters in one inch. This is the internationally agreed definition of the inch.' },
+      { question: 'How do I convert miles to kilometers?', answer: 'Multiply the number of miles by 1.609344 to get kilometers. For example, 10 miles equals 16.09 kilometers.' },
+      { question: 'What is the base unit used for length conversions?', answer: 'This tool uses meters as the common base unit internally, converting your input to meters first and then to your target unit for maximum accuracy.' }
+    ],
+    relatedSlugs: ['cm-to-inches-converter', 'weight-converter', 'unit-converter']
+  },
+  {
+    slug: 'cm-to-inches-converter',
+    category: 'conversion',
+    name: 'CM to Inches Converter',
+    h1: 'CM to Inches Converter',
+    seoTitle: 'CM to Inches Converter - Quick Centimeter Conversion',
+    seoDescription: 'Convert centimeters to inches and inches to centimeters instantly with this simple two-way converter.',
+    formulaDescription: 'Inches = Centimeters / 2.54. Centimeters = Inches * 2.54.',
+    explainerHtml: `
+      <p>Converting between centimeters and inches is one of the most common unit conversions, useful for height, screen sizes, fabric measurements, and international shopping.</p>
+      <h3>The Conversion Factor</h3>
+      <p>One inch is defined as exactly 2.54 centimeters. To convert centimeters to inches, divide by 2.54. To go the other way, multiply inches by 2.54.</p>
+      <h3>Quick Reference</h3>
+      <ul>
+        <li>1 cm ≈ 0.3937 in</li>
+        <li>1 in = 2.54 cm</li>
+        <li>30 cm ≈ 11.81 in</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many inches is 1 cm?', answer: '1 centimeter is approximately 0.3937 inches.' },
+      { question: 'How do I convert my height from cm to inches?', answer: 'Divide your height in centimeters by 2.54. For example, 170 cm divided by 2.54 equals about 66.9 inches.' },
+      { question: 'Is this conversion exact?', answer: 'Yes, the inch-to-centimeter relationship (1 in = 2.54 cm) is an exact, internationally defined conversion, not an approximation.' }
+    ],
+    relatedSlugs: ['length-converter', 'weight-converter', 'unit-converter']
+  },
+  {
+    slug: 'weight-converter',
+    category: 'conversion',
+    name: 'Weight Converter',
+    h1: 'Weight Converter',
+    seoTitle: 'Weight Converter - kg, lb, oz, g & Metric Tons',
+    seoDescription: 'Convert weight and mass instantly between kilograms, pounds, ounces, grams, and metric tons.',
+    formulaDescription: '1 kilogram = 2.20462 pounds. 1 pound = 0.45359237 kilograms.',
+    explainerHtml: `
+      <p>A weight converter helps you move between metric mass units (grams, kilograms, metric tons) and imperial/US units (ounces, pounds) commonly used in cooking, shipping, fitness, and science.</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 kilogram</strong> = 2.20462 pounds</li>
+        <li><strong>1 pound</strong> = 0.45359237 kilograms = 16 ounces</li>
+        <li><strong>1 ounce</strong> = 28.3495 grams</li>
+        <li><strong>1 metric ton</strong> = 1,000 kilograms</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many pounds are in a kilogram?', answer: 'One kilogram equals approximately 2.20462 pounds.' },
+      { question: 'How do I convert grams to ounces?', answer: 'Divide the number of grams by 28.3495 to get ounces.' },
+      { question: 'What is the difference between a metric ton and a US ton?', answer: 'A metric ton is 1,000 kilograms (about 2,204.6 lbs), while a US "short" ton is 2,000 pounds (about 907.18 kg). They are not the same unit.' }
+    ],
+    relatedSlugs: ['length-converter', 'density-converter', 'unit-converter']
+  },
+  {
+    slug: 'temperature-converter',
+    category: 'conversion',
+    name: 'Temperature Converter',
+    h1: 'Temperature Converter',
+    seoTitle: 'Temperature Converter - Celsius, Fahrenheit & Kelvin',
+    seoDescription: 'Convert temperatures instantly between Celsius, Fahrenheit, and Kelvin scales.',
+    formulaDescription: '°F = °C * 9/5 + 32. °C = (°F - 32) * 5/9. K = °C + 273.15.',
+    explainerHtml: `
+      <p>A temperature converter switches values between the three most common temperature scales: Celsius (used by most of the world), Fahrenheit (used in the US), and Kelvin (used in science).</p>
+      <h3>Conversion Formulas</h3>
+      <ul>
+        <li><strong>Celsius to Fahrenheit:</strong> °F = °C × 9/5 + 32</li>
+        <li><strong>Fahrenheit to Celsius:</strong> °C = (°F − 32) × 5/9</li>
+        <li><strong>Celsius to Kelvin:</strong> K = °C + 273.15</li>
+      </ul>
+      <h3>Reference Points</h3>
+      <p>Water freezes at 0°C / 32°F / 273.15K and boils at 100°C / 212°F / 373.15K at standard atmospheric pressure.</p>
+    `,
+    faqs: [
+      { question: 'What is 0°C in Fahrenheit?', answer: '0°C equals 32°F, the freezing point of water at sea level.' },
+      { question: 'Why does Kelvin never go negative?', answer: 'Kelvin is an absolute temperature scale starting at absolute zero (0K = -273.15°C), the theoretical point where all molecular motion stops, so negative Kelvin values do not occur in classical physics.' },
+      { question: 'How do I convert body temperature from Fahrenheit to Celsius?', answer: 'Subtract 32 from the Fahrenheit value, then multiply by 5/9. For example, 98.6°F becomes (98.6 - 32) × 5/9 = 37°C.' }
+    ],
+    relatedSlugs: ['weight-converter', 'length-converter', 'unit-converter']
+  },
+  {
+    slug: 'volume-converter',
+    category: 'conversion',
+    name: 'Volume Converter',
+    h1: 'Volume Converter',
+    seoTitle: 'Volume Converter - Liters, Gallons, mL, Cups & More',
+    seoDescription: 'Convert volume instantly between liters, gallons, milliliters, cups, fluid ounces, and cubic meters.',
+    formulaDescription: '1 US gallon = 3.785411784 liters. 1 liter = 1,000 milliliters.',
+    explainerHtml: `
+      <p>A volume converter helps you switch between metric and US customary volume units — useful for cooking, fuel, and liquid measurements.</p>
+      <h3>Common Volume Conversions</h3>
+      <ul>
+        <li><strong>1 US gallon</strong> = 3.785411784 liters</li>
+        <li><strong>1 liter</strong> = 1,000 milliliters</li>
+        <li><strong>1 US cup</strong> = 236.588 milliliters</li>
+        <li><strong>1 fluid ounce</strong> = 29.5735 milliliters</li>
+        <li><strong>1 cubic meter</strong> = 1,000 liters</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many liters are in a gallon?', answer: 'One US gallon equals approximately 3.785 liters. Note that a UK (imperial) gallon is larger, at about 4.546 liters.' },
+      { question: 'How many mL are in a cup?', answer: 'One US cup equals approximately 236.588 milliliters.' },
+      { question: 'Does this use US or UK gallons?', answer: 'This calculator uses the US liquid gallon (3.785411784 liters) by default, the standard used in American recipes and fuel measurements.' }
+    ],
+    relatedSlugs: ['cooking-converter', 'density-converter', 'unit-converter']
+  },
+  {
+    slug: 'area-converter',
+    category: 'conversion',
+    name: 'Area Converter',
+    h1: 'Area Converter',
+    seoTitle: 'Area Converter - Square Meters, Feet, Acres & Hectares',
+    seoDescription: 'Convert area instantly between square meters, square feet, acres, and hectares.',
+    formulaDescription: '1 acre = 4046.8564224 square meters. 1 hectare = 10,000 square meters.',
+    explainerHtml: `
+      <p>An area converter is essential for real estate, farming, and construction, letting you translate land or floor space between metric and imperial units.</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 acre</strong> = 4,046.8564224 square meters ≈ 43,560 square feet</li>
+        <li><strong>1 hectare</strong> = 10,000 square meters ≈ 2.471 acres</li>
+        <li><strong>1 square meter</strong> = 10.7639 square feet</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many square feet are in an acre?', answer: 'One acre equals exactly 43,560 square feet.' },
+      { question: 'How many acres are in a hectare?', answer: 'One hectare equals approximately 2.471 acres.' },
+      { question: 'What is the difference between an acre and a hectare?', answer: 'An acre is an imperial/US unit (43,560 sq ft), while a hectare is a metric unit (10,000 sq m). A hectare is roughly 2.47 times larger than an acre.' }
+    ],
+    relatedSlugs: ['acreage-calculator', 'length-converter', 'unit-converter']
+  },
+  {
+    slug: 'speed-converter',
+    category: 'conversion',
+    name: 'Speed Converter',
+    h1: 'Speed Converter',
+    seoTitle: 'Speed Converter - MPH, KPH, m/s & Knots',
+    seoDescription: 'Convert speed instantly between miles per hour, kilometers per hour, meters per second, and knots.',
+    formulaDescription: '1 mph = 1.609344 kph. 1 knot = 1.852 kph.',
+    explainerHtml: `
+      <p>A speed converter translates velocity between the units used in driving, aviation, and maritime navigation.</p>
+      <h3>Common Speed Conversions</h3>
+      <ul>
+        <li><strong>1 mph</strong> = 1.609344 km/h</li>
+        <li><strong>1 knot</strong> = 1.852 km/h (used in aviation and shipping)</li>
+        <li><strong>1 m/s</strong> = 3.6 km/h</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How do I convert mph to km/h?', answer: 'Multiply the mph value by 1.609344 to get kilometers per hour.' },
+      { question: 'What is a knot?', answer: 'A knot is a unit of speed equal to one nautical mile per hour, or 1.852 km/h. It is used primarily in maritime and aviation contexts.' },
+      { question: 'How fast is 100 km/h in mph?', answer: '100 km/h divided by 1.609344 equals approximately 62.14 mph.' }
+    ],
+    relatedSlugs: ['length-converter', 'fuel-economy-converter', 'unit-converter']
+  },
+  {
+    slug: 'pressure-converter',
+    category: 'conversion',
+    name: 'Pressure Converter',
+    h1: 'Pressure Converter',
+    seoTitle: 'Pressure Converter - PSI, Bar, Pascal & Atmospheres',
+    seoDescription: 'Convert pressure instantly between PSI, bar, pascal, and standard atmospheres.',
+    formulaDescription: '1 psi = 6894.75729 pascals. 1 bar = 100,000 pascals. 1 atm = 101,325 pascals.',
+    explainerHtml: `
+      <p>A pressure converter is useful for tire inflation, weather readings, and engineering, letting you switch between PSI, bar, pascal, and atmospheres.</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 psi</strong> = 6,894.75729 pascals</li>
+        <li><strong>1 bar</strong> = 100,000 pascals ≈ 14.5038 psi</li>
+        <li><strong>1 atmosphere (atm)</strong> = 101,325 pascals</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many PSI is one bar?', answer: 'One bar is approximately 14.5038 PSI.' },
+      { question: 'What pressure unit is standard atmospheric pressure?', answer: 'Standard atmospheric pressure is 1 atm, equal to 101,325 pascals or about 14.696 PSI.' },
+      { question: 'Why does tire pressure use PSI?', answer: 'PSI (pounds per square inch) is the traditional imperial pressure unit used in the US automotive industry, while most of the world uses bar or kPa for tire pressure.' }
+    ],
+    relatedSlugs: ['force-converter', 'weight-converter', 'unit-converter']
+  },
+  {
+    slug: 'force-converter',
+    category: 'conversion',
+    name: 'Force Converter',
+    h1: 'Force Converter',
+    seoTitle: 'Force Converter - Newtons, Pound-Force, Kgf & Dyne',
+    seoDescription: 'Convert force instantly between newtons, pound-force, kilogram-force, and dyne.',
+    formulaDescription: '1 newton = 0.224809 lbf. 1 kgf = 9.80665 newtons. 1 dyne = 0.00001 newtons.',
+    explainerHtml: `
+      <p>A force converter helps engineers, students, and hobbyists switch between the metric newton and other common force units.</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 newton (N)</strong> = 0.224809 pound-force (lbf)</li>
+        <li><strong>1 kilogram-force (kgf)</strong> = 9.80665 newtons</li>
+        <li><strong>1 dyne</strong> = 0.00001 newtons</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'What is a newton?', answer: 'A newton is the SI unit of force, defined as the force needed to accelerate a 1 kg mass at 1 meter per second squared.' },
+      { question: 'How do I convert newtons to pound-force?', answer: 'Multiply the newton value by 0.224809 to get pound-force (lbf).' },
+      { question: 'What is kgf used for?', answer: 'Kilogram-force (kgf) is a legacy metric force unit still used in some engineering and consumer contexts, equal to the force exerted by gravity on a 1 kg mass.' }
+    ],
+    relatedSlugs: ['pressure-converter', 'torque-converter', 'unit-converter']
+  },
+  {
+    slug: 'ppm-calculator',
+    category: 'conversion',
+    name: 'PPM Calculator',
+    h1: 'PPM Calculator (Parts Per Million)',
+    seoTitle: 'PPM Calculator - Convert Parts Per Million to Percent',
+    seoDescription: 'Convert between parts per million (ppm), percent, and ratio concentration values instantly.',
+    formulaDescription: 'Percent = PPM / 10,000. PPM = Percent * 10,000.',
+    explainerHtml: `
+      <p>Parts per million (ppm) is a common way to express very small concentrations, used in chemistry, water quality, and environmental science. This calculator converts ppm to percentage and ratio form and back.</p>
+      <h3>Conversion Formulas</h3>
+      <ul>
+        <li><strong>PPM to Percent:</strong> Percent = PPM ÷ 10,000</li>
+        <li><strong>Percent to PPM:</strong> PPM = Percent × 10,000</li>
+        <li><strong>PPM as a ratio:</strong> 1 ppm = 1 part in 1,000,000 parts</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'What does 1 ppm mean?', answer: '1 ppm means one part of a substance per one million parts of the total solution or mixture — equivalent to 0.0001%.' },
+      { question: 'How do I convert ppm to percent?', answer: 'Divide the ppm value by 10,000. For example, 500 ppm equals 0.05%.' },
+      { question: 'Where is ppm commonly used?', answer: 'PPM is widely used for measuring water hardness, chlorine levels, air pollutants, and trace chemical concentrations.' }
+    ],
+    relatedSlugs: ['percentage-calculator', 'density-converter', 'unit-converter']
+  },
+  {
+    slug: 'acreage-calculator',
+    category: 'conversion',
+    name: 'Acreage Calculator',
+    h1: 'Acreage Calculator',
+    seoTitle: 'Acreage Calculator - Acres to Sq Ft, Sq M & Hectares',
+    seoDescription: 'Convert acreage between acres, square feet, square meters, and hectares, plus estimate land value per acre.',
+    formulaDescription: '1 acre = 43,560 square feet = 4,046.8564224 square meters = 0.404686 hectares.',
+    explainerHtml: `
+      <p>An acreage calculator helps land buyers, farmers, and real estate professionals convert acres to other area units and estimate total land value based on a price-per-acre figure.</p>
+      <h3>Acreage Conversions</h3>
+      <ul>
+        <li><strong>1 acre</strong> = 43,560 square feet</li>
+        <li><strong>1 acre</strong> = 4,046.86 square meters</li>
+        <li><strong>1 acre</strong> = 0.404686 hectares</li>
+      </ul>
+      <h3>Estimating Land Value</h3>
+      <p>Multiply the number of acres by the price per acre to estimate total land price — a quick way to compare listings priced differently.</p>
+    `,
+    faqs: [
+      { question: 'How many square feet are in an acre?', answer: 'One acre equals exactly 43,560 square feet.' },
+      { question: 'How do I calculate total land price from price per acre?', answer: 'Multiply the number of acres by the price per acre. For example, 5 acres at $10,000/acre equals $50,000.' },
+      { question: 'How many acres are in a hectare?', answer: 'One hectare equals approximately 2.471 acres.' }
+    ],
+    relatedSlugs: ['area-converter', 'length-converter', 'unit-converter']
+  },
+  {
+    slug: 'currency-converter',
+    category: 'conversion',
+    name: 'Currency Converter',
+    h1: 'Currency Converter',
+    seoTitle: 'Currency Converter - Convert Money Using Your Own Rate',
+    seoDescription: 'Convert between two currencies by entering the current exchange rate manually for an instant calculation.',
+    formulaDescription: 'Converted Amount = Original Amount * Exchange Rate.',
+    explainerHtml: `
+      <p>This currency converter lets you calculate the value of money in another currency by entering the current exchange rate yourself, ensuring you always use the most up-to-date rate from your preferred source.</p>
+      <h3>How to Use</h3>
+      <p>Enter the amount you want to convert and the current exchange rate (found from your bank, a financial news site, or a live rate provider). The calculator instantly multiplies the amount by the rate.</p>
+      <h3>Why Enter Your Own Rate?</h3>
+      <p>Exchange rates fluctuate constantly throughout the trading day. Entering the rate manually ensures you are working with the exact figure relevant to your transaction, such as your bank's quoted rate or a real-time market rate.</p>
+    `,
+    faqs: [
+      { question: 'Where do I find the current exchange rate?', answer: 'Check your bank, a currency exchange service, or a financial data provider for the live mid-market or bank-quoted rate, then enter it here.' },
+      { question: 'Why doesn\'t this tool pull live rates automatically?', answer: 'This tool is designed to let you use the exact rate quoted by your bank or exchange provider, since actual transaction rates often differ from published market rates due to fees and spreads.' },
+      { question: 'How do I convert back to the original currency?', answer: 'Divide the converted amount by the exchange rate, or enter the reciprocal (1 / rate) as your new exchange rate.' }
+    ],
+    relatedSlugs: ['percentage-calculator', 'ppm-calculator', 'unit-converter']
+  },
+  {
+    slug: 'time-converter',
+    category: 'conversion',
+    name: 'Time Converter',
+    h1: 'Time Converter',
+    seoTitle: 'Time Converter - Seconds, Minutes, Hours, Days & Years',
+    seoDescription: 'Convert time instantly between seconds, minutes, hours, days, weeks, and years.',
+    formulaDescription: '1 minute = 60 seconds. 1 hour = 3,600 seconds. 1 day = 86,400 seconds.',
+    explainerHtml: `
+      <p>A time converter switches durations between seconds, minutes, hours, days, weeks, and years, handy for project planning, science, and everyday scheduling math.</p>
+      <h3>Time Unit Conversions</h3>
+      <ul>
+        <li><strong>1 minute</strong> = 60 seconds</li>
+        <li><strong>1 hour</strong> = 3,600 seconds = 60 minutes</li>
+        <li><strong>1 day</strong> = 86,400 seconds = 24 hours</li>
+        <li><strong>1 year</strong> ≈ 365.25 days (accounting for leap years)</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many seconds are in a day?', answer: 'There are 86,400 seconds in one 24-hour day (60 seconds × 60 minutes × 24 hours).' },
+      { question: 'How many hours are in a week?', answer: 'There are 168 hours in one week (24 hours × 7 days).' },
+      { question: 'Why use 365.25 days for a year?', answer: 'Using 365.25 days accounts for the extra day added roughly every 4 years in leap years, giving a more accurate average year length.' }
+    ],
+    relatedSlugs: ['date-difference-calculator', 'age-calculator', 'unit-converter']
+  },
+  {
+    slug: 'data-storage-converter',
+    category: 'conversion',
+    name: 'Data Storage Converter',
+    h1: 'Data Storage Converter',
+    seoTitle: 'Data Storage Converter - Bytes, KB, MB, GB & TB',
+    seoDescription: 'Convert digital storage instantly between bytes, kilobytes, megabytes, gigabytes, and terabytes, with binary and decimal options.',
+    formulaDescription: 'Decimal: 1 KB = 1,000 bytes. Binary: 1 KiB = 1,024 bytes.',
+    explainerHtml: `
+      <p>A data storage converter translates file sizes and storage capacities between bytes, kilobytes, megabytes, gigabytes, and terabytes — useful for understanding hard drive specs, file sizes, and cloud storage plans.</p>
+      <h3>Binary vs. Decimal Standards</h3>
+      <p>Storage manufacturers typically use decimal (base-1000) units, where 1 KB = 1,000 bytes. Operating systems often use binary (base-1024) units, where 1 KiB = 1,024 bytes. This discrepancy is why a "1TB" drive shows less capacity in Windows.</p>
+      <h3>Common Conversions (Decimal)</h3>
+      <ul>
+        <li>1 KB = 1,000 bytes</li>
+        <li>1 MB = 1,000,000 bytes</li>
+        <li>1 GB = 1,000,000,000 bytes</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'Why does my 1TB drive show less than 1,000GB in Windows?', answer: 'Windows uses binary (base-1024) calculations while drive manufacturers use decimal (base-1000), so a 1,000,000,000,000-byte "1TB" drive shows as roughly 931 GiB in the OS.' },
+      { question: 'How many MB are in a GB?', answer: 'Using decimal standard, 1 GB equals 1,000 MB. Using binary standard, 1 GiB equals 1,024 MiB.' },
+      { question: 'What is the difference between a bit and a byte?', answer: 'A byte consists of 8 bits. Data transfer speeds are often measured in bits (Mbps), while file sizes are measured in bytes (MB).' }
+    ],
+    relatedSlugs: ['unit-converter', 'time-converter', 'energy-converter']
+  },
+  {
+    slug: 'energy-converter',
+    category: 'conversion',
+    name: 'Energy Converter',
+    h1: 'Energy Converter',
+    seoTitle: 'Energy Converter - Joules, Calories, kWh & BTU',
+    seoDescription: 'Convert energy instantly between joules, calories, kilowatt-hours, and BTU.',
+    formulaDescription: '1 calorie = 4.184 joules. 1 kWh = 3,600,000 joules. 1 BTU = 1,055.06 joules.',
+    explainerHtml: `
+      <p>An energy converter switches between scientific and everyday energy units — used in nutrition (calories), electricity billing (kWh), and heating/cooling (BTU).</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 calorie</strong> = 4.184 joules</li>
+        <li><strong>1 kilowatt-hour (kWh)</strong> = 3,600,000 joules</li>
+        <li><strong>1 BTU</strong> = 1,055.06 joules</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many joules are in a food calorie?', answer: 'A food "Calorie" (kilocalorie) equals 4,184 joules. A small "calorie" equals 4.184 joules.' },
+      { question: 'What is a kWh used for?', answer: 'A kilowatt-hour is the standard unit electricity companies use to bill energy consumption — the energy of using 1,000 watts for one hour.' },
+      { question: 'What does BTU stand for?', answer: 'BTU stands for British Thermal Unit, commonly used to rate the heating or cooling capacity of appliances like air conditioners and furnaces.' }
+    ],
+    relatedSlugs: ['power-converter', 'calorie-calculator', 'unit-converter']
+  },
+  {
+    slug: 'angle-converter',
+    category: 'conversion',
+    name: 'Angle Converter',
+    h1: 'Angle Converter',
+    seoTitle: 'Angle Converter - Degrees, Radians & Gradians',
+    seoDescription: 'Convert angles instantly between degrees, radians, and gradians.',
+    formulaDescription: 'Radians = Degrees * (π / 180). Gradians = Degrees * (10/9).',
+    explainerHtml: `
+      <p>An angle converter switches between degrees (the everyday unit), radians (used in mathematics and physics), and gradians (used in some surveying applications).</p>
+      <h3>Conversion Formulas</h3>
+      <ul>
+        <li><strong>Degrees to Radians:</strong> Radians = Degrees × (π / 180)</li>
+        <li><strong>Degrees to Gradians:</strong> Gradians = Degrees × (10 / 9)</li>
+        <li><strong>Full circle:</strong> 360° = 2π radians = 400 gradians</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many radians are in a full circle?', answer: 'A full circle equals 2π radians, approximately 6.2832 radians.' },
+      { question: 'What is a gradian?', answer: 'A gradian (or gon) divides a right angle into 100 units, so a full circle equals 400 gradians. It is mainly used in surveying and some European engineering contexts.' },
+      { question: 'How do I convert 90 degrees to radians?', answer: '90 degrees × (π / 180) = π/2 radians, approximately 1.5708 radians.' }
+    ],
+    relatedSlugs: ['unit-converter', 'torque-converter', 'length-converter']
+  },
+  {
+    slug: 'fuel-economy-converter',
+    category: 'conversion',
+    name: 'Fuel Economy Converter',
+    h1: 'Fuel Economy Converter',
+    seoTitle: 'Fuel Economy Converter - MPG to L/100km & km/L',
+    seoDescription: 'Convert fuel economy instantly between miles per gallon (MPG), liters per 100km, and kilometers per liter.',
+    formulaDescription: 'L/100km = 235.214583 / MPG (US). km/L = 100 / (L/100km).',
+    explainerHtml: `
+      <p>A fuel economy converter translates vehicle efficiency ratings between the US standard (miles per gallon) and the metric standards used elsewhere (liters per 100km, or km per liter).</p>
+      <h3>Why the Conversion is Inverted</h3>
+      <p>MPG and km/L measure distance per unit of fuel (higher is better), while L/100km measures fuel used per fixed distance (lower is better) — so the relationship between MPG and L/100km is inverse, not linear.</p>
+      <h3>Key Formula</h3>
+      <p><code>L/100km = 235.214583 / MPG</code> (using US gallons). This inverse relationship means doubling your MPG does not simply halve your L/100km in a linear sense at every point of the scale.</p>
+    `,
+    faqs: [
+      { question: 'How do I convert MPG to L/100km?', answer: 'Divide 235.214583 by your MPG value (using US gallons) to get liters per 100 kilometers.' },
+      { question: 'Is UK MPG different from US MPG?', answer: 'Yes. A UK (imperial) gallon is larger than a US gallon, so UK MPG figures are typically about 20% higher than the equivalent US MPG for the same fuel efficiency.' },
+      { question: 'What does a lower L/100km number mean?', answer: 'A lower L/100km value means better fuel efficiency — the vehicle uses less fuel to travel the same distance.' }
+    ],
+    relatedSlugs: ['speed-converter', 'volume-converter', 'unit-converter']
+  },
+  {
+    slug: 'cooking-converter',
+    category: 'conversion',
+    name: 'Cooking Measurement Converter',
+    h1: 'Cooking Converter',
+    seoTitle: 'Cooking Converter - Cups, Tablespoons, mL & Grams',
+    seoDescription: 'Convert cooking measurements between cups, tablespoons, teaspoons, milliliters, and grams for common ingredients.',
+    formulaDescription: '1 cup = 236.588 mL = 16 tablespoons = 48 teaspoons. Gram conversions vary by ingredient density.',
+    explainerHtml: `
+      <p>A cooking converter helps home bakers and chefs switch between volume measurements (cups, tablespoons, teaspoons, milliliters) and approximate weight in grams for common ingredients.</p>
+      <h3>Volume Conversions</h3>
+      <ul>
+        <li><strong>1 cup</strong> = 236.588 mL = 16 tablespoons</li>
+        <li><strong>1 tablespoon</strong> = 14.7868 mL = 3 teaspoons</li>
+        <li><strong>1 teaspoon</strong> = 4.92892 mL</li>
+      </ul>
+      <h3>Note on Gram Conversions</h3>
+      <p>Converting volume to grams is approximate because ingredient density varies — 1 cup of flour weighs roughly 120g, while 1 cup of sugar weighs roughly 200g. Always note that gram conversions are estimates.</p>
+    `,
+    faqs: [
+      { question: 'How many tablespoons are in a cup?', answer: 'There are 16 tablespoons in one US cup.' },
+      { question: 'Why are gram conversions approximate?', answer: 'Different ingredients have different densities — a cup of flour weighs less than a cup of sugar or water — so volume-to-weight conversions are estimates based on typical ingredient density.' },
+      { question: 'How many mL are in a tablespoon?', answer: 'One US tablespoon equals approximately 14.79 milliliters.' }
+    ],
+    relatedSlugs: ['volume-converter', 'density-converter', 'unit-converter']
+  },
+  {
+    slug: 'density-converter',
+    category: 'conversion',
+    name: 'Density Converter',
+    h1: 'Density Converter',
+    seoTitle: 'Density Converter - kg/m3, g/cm3 & lb/ft3',
+    seoDescription: 'Convert density instantly between kilograms per cubic meter, grams per cubic centimeter, and pounds per cubic foot.',
+    formulaDescription: '1 g/cm3 = 1,000 kg/m3. 1 lb/ft3 = 16.0185 kg/m3.',
+    explainerHtml: `
+      <p>A density converter translates mass-per-volume measurements between metric and imperial units, used in material science, cooking, and engineering.</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 g/cm³</strong> = 1,000 kg/m³ (water has a density of 1 g/cm³)</li>
+        <li><strong>1 lb/ft³</strong> = 16.0185 kg/m³</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'What is the density of water?', answer: 'Water has a density of approximately 1 g/cm³, or 1,000 kg/m³, at 4°C.' },
+      { question: 'How do I convert g/cm3 to kg/m3?', answer: 'Multiply the g/cm³ value by 1,000 to get kg/m³.' },
+      { question: 'Why does density matter for shipping?', answer: 'Density determines "dimensional weight" for shipping — low-density (bulky, lightweight) items are often billed by volume rather than actual weight.' }
+    ],
+    relatedSlugs: ['weight-converter', 'volume-converter', 'unit-converter']
+  },
+  {
+    slug: 'power-converter',
+    category: 'conversion',
+    name: 'Power Converter',
+    h1: 'Power Converter',
+    seoTitle: 'Power Converter - Watts, Kilowatts, Horsepower & BTU/h',
+    seoDescription: 'Convert power instantly between watts, kilowatts, horsepower, and BTU per hour.',
+    formulaDescription: '1 horsepower = 745.699872 watts. 1 kW = 1,000 watts. 1 watt = 3.412142 BTU/h.',
+    explainerHtml: `
+      <p>A power converter translates rate-of-energy-use units between watts (electrical), horsepower (mechanical/automotive), and BTU per hour (HVAC).</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 horsepower (hp)</strong> = 745.699872 watts</li>
+        <li><strong>1 kilowatt (kW)</strong> = 1,000 watts ≈ 1.341 hp</li>
+        <li><strong>1 watt</strong> = 3.412142 BTU per hour</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How many watts is 1 horsepower?', answer: 'One mechanical horsepower equals approximately 745.7 watts.' },
+      { question: 'How do I convert kW to horsepower?', answer: 'Multiply the kilowatt value by 1.34102 to get horsepower.' },
+      { question: 'What is BTU/h used for?', answer: 'BTU per hour measures the heating or cooling power of HVAC equipment like air conditioners and furnaces.' }
+    ],
+    relatedSlugs: ['energy-converter', 'torque-converter', 'unit-converter']
+  },
+  {
+    slug: 'torque-converter',
+    category: 'conversion',
+    name: 'Torque Converter',
+    h1: 'Torque Converter',
+    seoTitle: 'Torque Converter - Newton-Meters, Ft-lb & In-lb',
+    seoDescription: 'Convert torque instantly between newton-meters, foot-pounds, and inch-pounds.',
+    formulaDescription: '1 N·m = 0.737562 ft-lb. 1 ft-lb = 12 in-lb.',
+    explainerHtml: `
+      <p>A torque converter switches rotational force values between the metric newton-meter and the imperial foot-pound and inch-pound units used in automotive and mechanical work.</p>
+      <h3>Key Conversion Factors</h3>
+      <ul>
+        <li><strong>1 newton-meter (N·m)</strong> = 0.737562 foot-pounds (ft-lb)</li>
+        <li><strong>1 foot-pound</strong> = 12 inch-pounds (in-lb)</li>
+      </ul>
+    `,
+    faqs: [
+      { question: 'How do I convert N·m to ft-lb?', answer: 'Multiply the newton-meter value by 0.737562 to get foot-pounds.' },
+      { question: 'Why does torque matter for bolts?', answer: 'Torque specifications ensure bolts and fasteners are tightened to the correct force — too little risks loosening, too much can strip threads or break the fastener.' },
+      { question: 'How many inch-pounds are in a foot-pound?', answer: 'There are 12 inch-pounds in one foot-pound, since 1 foot equals 12 inches.' }
+    ],
+    relatedSlugs: ['force-converter', 'power-converter', 'unit-converter']
+  },
+  {
+    slug: 'shoe-size-converter',
+    category: 'conversion',
+    name: 'Shoe Size Converter',
+    h1: 'Shoe Size Converter',
+    seoTitle: 'Shoe Size Converter - US, UK, EU & CM Sizing',
+    seoDescription: 'Convert shoe sizes instantly between US, UK, EU, and centimeter sizing standards for men and women.',
+    formulaDescription: 'Approximate conversions based on standard published international shoe size charts.',
+    explainerHtml: `
+      <p>A shoe size converter translates sizing between US, UK, EU, and centimeter foot-length standards, useful when shopping from international retailers.</p>
+      <h3>How Sizing Systems Differ</h3>
+      <p>US, UK, and EU shoe sizes each use different base scales and increments. EU sizing (Paris point system) is based on foot length in centimeters multiplied by 1.5, while US and UK systems use their own historical scales that differ between men's and women's sizing.</p>
+      <h3>Note on Accuracy</h3>
+      <p>Because brands sometimes vary slightly in their sizing, these conversions are approximate guides based on standard published international size charts — always check a brand's specific size chart when possible.</p>
+    `,
+    faqs: [
+      { question: 'Is EU shoe size the same for men and women?', answer: 'EU sizing uses the same numeric scale for men and women, unlike US and UK sizing which have separate men\'s and women\'s scales.' },
+      { question: 'How accurate are shoe size conversions?', answer: 'Shoe size conversions are approximate because sizing standards and brand-specific lasts vary. For a precise fit, measure your foot length in centimeters and compare against a specific brand\'s size chart.' },
+      { question: 'What is the difference between US and UK shoe sizes?', answer: 'UK sizes are typically about 0.5 to 1 size number smaller than the equivalent US size for the same foot length.' }
+    ],
+    relatedSlugs: ['clothing-size-converter', 'length-converter', 'unit-converter']
+  },
+  {
+    slug: 'clothing-size-converter',
+    category: 'conversion',
+    name: 'Clothing Size Converter',
+    h1: 'Clothing Size Converter',
+    seoTitle: 'Clothing Size Converter - US, UK & EU Sizing',
+    seoDescription: 'Convert clothing sizes instantly between US, UK, and EU letter and number sizing standards.',
+    formulaDescription: 'Approximate conversions based on standard published international clothing size charts.',
+    explainerHtml: `
+      <p>A clothing size converter helps you translate sizing between US, UK, and EU standards when shopping from international brands or retailers.</p>
+      <h3>Why Sizes Differ by Region</h3>
+      <p>US, UK, and EU clothing sizes each follow different numbering conventions. EU sizes are typically larger numbers than US sizes for the same fit (e.g., a US size 8 is often an EU size 38-40), and UK sizing frequently sits close to US numbering but not identically.</p>
+      <h3>Note on Accuracy</h3>
+      <p>Clothing size conversions are approximate guides, since actual fit varies significantly by brand, cut, and garment type. Always check the specific brand's size chart when available.</p>
+    `,
+    faqs: [
+      { question: 'Is a US size 8 the same as a UK size 8?', answer: 'No. A US size 8 typically corresponds to roughly a UK size 10-12 for women\'s clothing, since UK sizing runs differently from US sizing.' },
+      { question: 'Why do clothing sizes vary between brands?', answer: 'There is no single universal standard for clothing sizing, so brands use their own measurements and cuts, causing the same labeled size to fit differently across brands.' },
+      { question: 'What is EU clothing sizing based on?', answer: 'EU sizing is generally based on body measurements in centimeters, resulting in larger numeric labels than US sizing for the same actual fit.' }
+    ],
+    relatedSlugs: ['shoe-size-converter', 'length-converter', 'unit-converter']
   }
 ];

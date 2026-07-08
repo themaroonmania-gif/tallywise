@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { calculators, CATEGORIES, CategoryKey } from '@/config/calculators';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
+import { AdSlot } from '@/components/common/AdSlot';
 import type { Metadata } from 'next';
 
 interface CategoryPageProps {
@@ -18,6 +19,7 @@ export function generateStaticParams() {
     { category: 'health' },
     { category: 'school' },
     { category: 'everyday' },
+    { category: 'conversion' },
   ];
 }
 
@@ -53,6 +55,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     if (cat === 'finance') return 'bg-emerald-500 text-white';
     if (cat === 'health') return 'bg-rose-500 text-white';
     if (cat === 'school') return 'bg-indigo-500 text-white';
+    if (cat === 'conversion') return 'bg-teal-500 text-white';
     return 'bg-amber-500 text-white';
   };
 
@@ -60,6 +63,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     if (cat === 'finance') return 'hover:border-emerald-500/20 hover:shadow-emerald-500/5';
     if (cat === 'health') return 'hover:border-rose-500/20 hover:shadow-rose-500/5';
     if (cat === 'school') return 'hover:border-indigo-500/20 hover:shadow-indigo-500/5';
+    if (cat === 'conversion') return 'hover:border-teal-500/20 hover:shadow-teal-500/5';
     return 'hover:border-amber-500/20 hover:shadow-amber-500/5';
   };
 
@@ -81,6 +85,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               {categoryInfo.description} Browse our selection of verified calculator tools below.
             </p>
           </div>
+
+          <AdSlot id={`category-${catKey}-mid`} type="rectangle" />
 
           {/* Calculator Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

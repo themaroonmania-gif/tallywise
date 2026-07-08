@@ -3,6 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Brand */
+  --color-brand-primary: #4f46e5;
+  --color-brand-secondary: #10b981;
+
+  /* Category accents */
+  --color-cat-finance: #10b981;
+  --color-cat-health: #f43f5e;
+  --color-cat-school: #6366f1;
+  --color-cat-everyday: #f59e0b;
+  --color-cat-conversion: #0d9488;
 }
 
 @theme inline {
@@ -12,15 +23,29 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* In-between shades used throughout the calculator UI (e.g. text-slate-650,
+   bg-emerald-550) that aren't part of Tailwind's default palette. Defining
+   them here makes those utilities resolve to real colors instead of silently
+   being dropped, which previously left elements with no explicit color and
+   let them fall through to the (theme-dependent) inherited body color. */
+@theme {
+  --color-slate-150: #eaeff5;
+  --color-slate-250: #d7dfe9;
+  --color-slate-450: #7c8ca2;
+  --color-slate-550: #56657a;
+  --color-slate-650: #3d4b5f;
+  --color-slate-750: #293548;
+  --color-slate-850: #172033;
+  --color-emerald-550: #0ba875;
+  --color-indigo-650: #493fd8;
 }
+
+/* No component in this codebase has dark-mode-aware styling (no `dark:`
+   variants), so auto-switching --background/--foreground via
+   prefers-color-scheme left text unreadable against still-light cards.
+   Site stays light regardless of OS theme until real dark mode is built. */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

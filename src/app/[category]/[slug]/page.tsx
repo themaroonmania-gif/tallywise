@@ -32,11 +32,24 @@ export async function generateMetadata({ params }: CalculatorPageProps): Promise
     };
   }
 
+  const canonical = `https://tallywise.co/${calc.category}/${calc.slug}`;
+
   return {
     title: calc.seoTitle,
     description: calc.seoDescription,
     alternates: {
-      canonical: `https://tallywise.co/${calc.category}/${calc.slug}`,
+      canonical,
+    },
+    openGraph: {
+      title: calc.seoTitle,
+      description: calc.seoDescription,
+      url: canonical,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: calc.seoTitle,
+      description: calc.seoDescription,
     },
   };
 }
@@ -91,7 +104,34 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
       ? 'bg-rose-500 text-white'
       : calc.category === 'school'
       ? 'bg-indigo-500 text-white'
+      : calc.category === 'conversion'
+      ? 'bg-teal-500 text-white'
       : 'bg-amber-500 text-white';
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: 'https://tallywise.co/',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: calc.category,
+        item: `https://tallywise.co/${calc.category}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: calc.name,
+        item: `https://tallywise.co/${calc.category}/${calc.slug}`,
+      },
+    ],
+  };
 
   return (
     <>
@@ -105,6 +145,10 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <Header />

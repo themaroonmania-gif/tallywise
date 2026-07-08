@@ -46,6 +46,12 @@ export function Header() {
             >
               Everyday
             </Link>
+            <Link
+              href="/conversion"
+              className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-650 transition-colors"
+            >
+              Conversion
+            </Link>
           </nav>
 
           {/* Mobile Menu Icon (Simple indicator or standard layout helper) */}
