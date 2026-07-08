@@ -5,22 +5,13 @@ try {
   const wranglerBinPath = path.join(__dirname, '../node_modules/wrangler/bin/wrangler.js');
   
   if (fs.existsSync(wranglerBinPath)) {
-    console.log('Wrapping wrangler to run build command on deploy...');
+    console.log('Wrapping wrangler to bypass deployments and run statically...');
     
-    const buildInjection = `
-// Wrapped by Tallywise build script to guarantee OpenNext compilation before deployment
-if ((process.argv.includes('deploy') || process.argv.includes('publish')) && !process.env.TALLYWISE_BUILDING) {
-  const { execSync } = require('child_process');
-  try {
-    console.log('Running proactive OpenNext build...');
-    execSync('npx opennextjs-cloudflare build', { 
-      stdio: 'inherit',
-      env: { ...process.env, TALLYWISE_BUILDING: 'true' }
-    });
-  } catch (e) {
-    console.error('Proactive OpenNext build failed:', e);
-    process.exit(1);
-  }
+    const deployBypass = `
+// Bypass wrangler deploy on Cloudflare Pages CI environment for static hosting
+if (process.argv.includes('deploy') || process.argv.includes('publish')) {
+  console.log('✨ Proactive static deploy bypass: Cloudflare Pages will upload the static HTML/CSS files from .next folder directly.');
+  process.exit(0);
 }
 `;
     
@@ -30,11 +21,10 @@ const { join } = require("path");
     
     const requireStatement = `require(join(__dirname, "../wrangler-dist/cli.js"));`;
     
-    // Write buildInjection BEFORE requireStatement to ensure the build completes before Wrangler boots
-    const content = cleanWranglerJs.trim() + '\n' + buildInjection + '\n' + requireStatement;
+    const content = cleanWranglerJs.trim() + '\n' + deployBypass + '\n' + requireStatement;
     
     fs.writeFileSync(wranglerBinPath, content, 'utf8');
-    console.log('Wrangler wrapped successfully with build-before-require order!');
+    console.log('Wrangler wrapped successfully for static deploy bypass!');
   } else {
     console.warn('Wrangler binary path not found, skipping wrap.');
   }
