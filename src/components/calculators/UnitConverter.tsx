@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ShellInput, ResultCard } from './CalculatorShell';
 
 export function UnitConverter() {
   const [conversionType, setConversionType] = useState<'length' | 'weight' | 'temp'>('length');
@@ -27,7 +28,7 @@ export function UnitConverter() {
     in: { label: 'Inches (in)', ratio: 0.0254 },
     ft: { label: 'Feet (ft)', ratio: 0.3048 },
     yd: { label: 'Yards (yd)', ratio: 0.9144 },
-    mi: { label: 'Miles (mi)', ratio: 1609.34 },
+    mi: { label: 'Miles (mi)', ratio: 1609.344 },
   };
 
   const weightUnits: Record<string, { label: string; ratio: number }> = {
@@ -79,11 +80,10 @@ export function UnitConverter() {
   }, [conversionType, value, lengthFrom, lengthTo, weightFrom, weightTo, tempFrom, tempTo]);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">Conversion Details</h2>
-
+    <CalculatorShell
+      title="Conversion Details"
+      inputs={
+        <div className="space-y-4">
           <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Category</label>
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-1 rounded-xl">
@@ -124,7 +124,7 @@ export function UnitConverter() {
                 <select
                   value={lengthFrom}
                   onChange={(e) => setLengthFrom(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
                 >
                   {Object.entries(lengthUnits).map(([key, obj]) => (
                     <option key={key} value={key}>{obj.label}</option>
@@ -135,7 +135,7 @@ export function UnitConverter() {
                 <select
                   value={weightFrom}
                   onChange={(e) => setWeightFrom(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
                 >
                   {Object.entries(weightUnits).map(([key, obj]) => (
                     <option key={key} value={key}>{obj.label}</option>
@@ -146,7 +146,7 @@ export function UnitConverter() {
                 <select
                   value={tempFrom}
                   onChange={(e) => setTempFrom(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
                 >
                   <option value="C">Celsius (°C)</option>
                   <option value="F">Fahrenheit (°F)</option>
@@ -161,7 +161,7 @@ export function UnitConverter() {
                 <select
                   value={lengthTo}
                   onChange={(e) => setLengthTo(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
                 >
                   {Object.entries(lengthUnits).map(([key, obj]) => (
                     <option key={key} value={key}>{obj.label}</option>
@@ -172,7 +172,7 @@ export function UnitConverter() {
                 <select
                   value={weightTo}
                   onChange={(e) => setWeightTo(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
                 >
                   {Object.entries(weightUnits).map(([key, obj]) => (
                     <option key={key} value={key}>{obj.label}</option>
@@ -183,7 +183,7 @@ export function UnitConverter() {
                 <select
                   value={tempTo}
                   onChange={(e) => setTempTo(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
                 >
                   <option value="C">Celsius (°C)</option>
                   <option value="F">Fahrenheit (°F)</option>
@@ -193,32 +193,16 @@ export function UnitConverter() {
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Value to Convert</label>
-            <input
-              type="number"
-              value={value}
-              onChange={(e) => setValue(Number(e.target.value))}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 font-semibold text-slate-800"
-            />
-          </div>
+          <ShellInput
+            label="Value to Convert"
+            value={value}
+            onChange={(e) => setValue(Number(e.target.value))}
+          />
         </div>
-
-        <div className="md:col-span-6 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Conversion Result</h2>
-
-            <div className="bg-amber-500 text-white rounded-xl p-6 text-center shadow-md shadow-amber-500/10">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
-                Converted Output
-              </span>
-              <div className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {result}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      }
+      results={
+        <ResultCard label="Converted Output" value={result} color="amber" />
+      }
+    />
   );
 }

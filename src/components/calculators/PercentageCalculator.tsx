@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ResultCard } from './CalculatorShell';
 
 export function PercentageCalculator() {
   // Calculator 1: What is X% of Y?
@@ -45,11 +46,11 @@ export function PercentageCalculator() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-8">
-      
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-6">
+
       {/* Mini Calculator 1 */}
-      <div className="p-5 rounded-2xl border border-slate-150/70 bg-slate-50/50 space-y-4">
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-200/50 pb-2">
+      <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-4">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/50 pb-2">
           1. Calculate percentage of a value
         </h3>
         <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-700">
@@ -58,27 +59,23 @@ export function PercentageCalculator() {
             type="number"
             value={c1Percent}
             onChange={(e) => calculateC1(Number(e.target.value), c1Value)}
-            className="w-20 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-850 bg-white"
+            className="w-20 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-800 bg-white transition-all hover:border-slate-300"
           />
           <span>% of</span>
           <input
             type="number"
             value={c1Value}
             onChange={(e) => calculateC1(c1Percent, Number(e.target.value))}
-            className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-850 bg-white"
+            className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-800 bg-white transition-all hover:border-slate-300"
           />
           <span>?</span>
-          
-          <div className="ml-auto flex items-center gap-2 bg-amber-500 text-white px-4 py-1.5 rounded-xl">
-            <span className="text-xs opacity-90 font-medium">Result:</span>
-            <span className="text-md font-bold">{c1Result}</span>
-          </div>
         </div>
+        <ResultCard label="Result" value={c1Result.toLocaleString()} color="amber" />
       </div>
 
       {/* Mini Calculator 2 */}
-      <div className="p-5 rounded-2xl border border-slate-150/70 bg-slate-50/50 space-y-4">
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-200/50 pb-2">
+      <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-4">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/50 pb-2">
           2. Calculate percentage proportion
         </h3>
         <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-700">
@@ -86,27 +83,23 @@ export function PercentageCalculator() {
             type="number"
             value={c2Value1}
             onChange={(e) => calculateC2(Number(e.target.value), c2Value2)}
-            className="w-24 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-850 bg-white"
+            className="w-24 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-800 bg-white transition-all hover:border-slate-300"
           />
           <span>is what percent of</span>
           <input
             type="number"
             value={c2Value2}
             onChange={(e) => calculateC2(c2Value1, Number(e.target.value))}
-            className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-850 bg-white"
+            className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-800 bg-white transition-all hover:border-slate-300"
           />
           <span>?</span>
-          
-          <div className="ml-auto flex items-center gap-2 bg-amber-500 text-white px-4 py-1.5 rounded-xl">
-            <span className="text-xs opacity-90 font-medium">Result:</span>
-            <span className="text-md font-bold">{c2Result}%</span>
-          </div>
         </div>
+        <ResultCard label="Result" value={`${c2Result}%`} color="amber" />
       </div>
 
       {/* Mini Calculator 3 */}
-      <div className="p-5 rounded-2xl border border-slate-150/70 bg-slate-50/50 space-y-4">
-        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider border-b border-slate-200/50 pb-2">
+      <div className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 space-y-4">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/50 pb-2">
           3. Calculate percentage increase/decrease
         </h3>
         <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-slate-700">
@@ -115,24 +108,22 @@ export function PercentageCalculator() {
             type="number"
             value={c3Value1}
             onChange={(e) => calculateC3(Number(e.target.value), c3Value2)}
-            className="w-24 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-850 bg-white"
+            className="w-24 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-800 bg-white transition-all hover:border-slate-300"
           />
           <span>to</span>
           <input
             type="number"
             value={c3Value2}
             onChange={(e) => calculateC3(c3Value1, Number(e.target.value))}
-            className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-850 bg-white"
+            className="w-28 px-3 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-center text-slate-800 bg-white transition-all hover:border-slate-300"
           />
           <span>?</span>
-          
-          <div className={`ml-auto flex items-center gap-2 text-white px-4 py-1.5 rounded-xl ${c3Result >= 0 ? 'bg-emerald-500' : 'bg-red-500'}`}>
-            <span className="text-xs opacity-90 font-medium">Result:</span>
-            <span className="text-md font-bold">
-              {c3Result >= 0 ? `+${c3Result}% Increase` : `${c3Result}% Decrease`}
-            </span>
-          </div>
         </div>
+        <ResultCard
+          label="Result"
+          value={c3Result >= 0 ? `+${c3Result}% Increase` : `${c3Result}% Decrease`}
+          color={c3Result >= 0 ? 'emerald' : 'rose'}
+        />
       </div>
     </div>
   );

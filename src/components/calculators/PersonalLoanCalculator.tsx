@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ShellInput, ResultCard } from './CalculatorShell';
 
 export function PersonalLoanCalculator() {
   const [loanAmount, setLoanAmount] = useState<number>(10000);
@@ -64,99 +65,72 @@ export function PersonalLoanCalculator() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">Personal Loan Details</h2>
-
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Loan Amount</label>
-            <div className="relative">
-              <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-              <input
-                type="number"
-                value={loanAmount}
-                onChange={(e) => setLoanAmount(Number(e.target.value))}
-                className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-              />
-            </div>
-          </div>
+    <CalculatorShell
+      title="Personal Loan Details"
+      inputs={
+        <div className="space-y-4">
+          <ShellInput
+            label="Loan Amount"
+            suffix="$"
+            value={loanAmount}
+            onChange={(e) => setLoanAmount(Number(e.target.value))}
+          />
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Loan Term (Years)</label>
-              <input
-                type="number"
-                min={1}
-                max={15}
-                value={loanTerm}
-                onChange={(e) => setLoanTerm(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Interest Rate (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={interestRate}
-                onChange={(e) => setInterestRate(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Origination Fee (%)</label>
-            <input
-              type="number"
-              step="0.1"
-              value={originationFee}
-              onChange={(e) => setOriginationFee(Number(e.target.value))}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-800"
+            <ShellInput
+              label="Loan Term (Years)"
+              min={1}
+              max={15}
+              value={loanTerm}
+              onChange={(e) => setLoanTerm(Number(e.target.value))}
+            />
+            <ShellInput
+              label="Interest Rate"
+              suffix="%"
+              step="0.01"
+              value={interestRate}
+              onChange={(e) => setInterestRate(Number(e.target.value))}
             />
           </div>
+
+          <ShellInput
+            label="Origination Fee"
+            suffix="%"
+            step="0.1"
+            value={originationFee}
+            onChange={(e) => setOriginationFee(Number(e.target.value))}
+          />
         </div>
+      }
+      results={
+        <div className="space-y-4">
+          <ResultCard label="Estimated Monthly Payment" value={formatCurrency(results.monthlyPayment)} />
 
-        <div className="md:col-span-6 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Loan Summary</h2>
-
-            <div className="bg-emerald-600 text-white rounded-xl p-6 text-center shadow-md shadow-emerald-600/10">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
-                Estimated Monthly Payment
-              </span>
-              <div className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {formatCurrency(results.monthlyPayment)}
-              </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
+              <span>Total Interest Cost</span>
+              <span className="text-red-500 font-semibold">{formatCurrency(results.totalInterest)}</span>
             </div>
-
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm font-semibold text-slate-700">
-                <span>Total Interest Cost</span>
-                <span className="text-red-500 font-semibold">{formatCurrency(results.totalInterest)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Origination Fee ({originationFee}%)</span>
-                <span>{formatCurrency(results.feeAmount)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Net Amount Disbursed</span>
-                <span className="text-emerald-600 font-semibold">{formatCurrency(results.netDisbursed)}</span>
-              </div>
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Estimated APR</span>
-                <span className="font-semibold text-slate-800">{results.apr}%</span>
-              </div>
-              <div className="border-t border-slate-200 my-2"></div>
-              <div className="flex justify-between items-center text-sm font-bold text-slate-850">
-                <span>Total Amount Repaid</span>
-                <span>{formatCurrency(results.totalPayments)}</span>
-              </div>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Origination Fee ({originationFee}%)</span>
+              <span>{formatCurrency(results.feeAmount)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Net Amount Disbursed</span>
+              <span className="text-emerald-600 font-semibold">{formatCurrency(results.netDisbursed)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Estimated APR</span>
+              <span className="font-semibold text-slate-800">{results.apr}%</span>
+            </div>
+            <div className="border-t border-slate-200 my-2"></div>
+            <div className="flex justify-between items-center text-sm font-bold text-slate-800">
+              <span>Total Amount Repaid</span>
+              <span>{formatCurrency(results.totalPayments)}</span>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

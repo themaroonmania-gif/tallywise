@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalculatorShell, ShellInput, ShellSelect, ResultCard } from './CalculatorShell';
 
 export function MortgageCalculator() {
   const [homePrice, setHomePrice] = useState<number>(400000);
@@ -42,6 +43,7 @@ export function MortgageCalculator() {
       const pct = homePrice > 0 ? (downPayment / homePrice) * 100 : 0;
       setDownPaymentPercent(Number(pct.toFixed(2)));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [downPayment, homePrice]);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function MortgageCalculator() {
       const amt = homePrice * (downPaymentPercent / 100);
       setDownPayment(Number(amt.toFixed(0)));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [downPaymentPercent, homePrice]);
 
   useEffect(() => {
@@ -97,7 +100,7 @@ export function MortgageCalculator() {
     let totalInterestWithExtra = 0;
     let monthCount = 0;
     let monthCountWithExtra = 0;
-    
+
     const yearlyData: typeof amortization = [];
     let yearInterest = 0;
     let yearPrincipal = 0;
@@ -151,7 +154,6 @@ export function MortgageCalculator() {
       yearsSaved,
       interestSaved,
     });
-
   }, [homePrice, downPayment, loanTerm, interestRate, propertyTaxRate, homeInsurance, extraPayment, downPaymentType, downPaymentPercent]);
 
   const formatCurrency = (val: number) => {
@@ -163,29 +165,20 @@ export function MortgageCalculator() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Inputs Column */}
-        <div className="lg:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">Mortgage Details</h2>
-          
+    <div className="space-y-6">
+    <CalculatorShell
+      title="Mortgage Details"
+      inputs={
+        <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Home Price</label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-                <input
-                  type="number"
-                  value={homePrice}
-                  onChange={(e) => setHomePrice(Number(e.target.value))}
-                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-                  placeholder="e.g. 400000"
-                />
-              </div>
-            </div>
+            <ShellInput
+              label="Home Price"
+              suffix="$"
+              value={homePrice}
+              onChange={(e) => setHomePrice(Number(e.target.value))}
+              placeholder="e.g. 400000"
+            />
 
-            {/* Down Payment Option */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Down Payment</label>
@@ -193,14 +186,14 @@ export function MortgageCalculator() {
                   <button
                     type="button"
                     onClick={() => setDownPaymentType('amount')}
-                    className={`px-1.5 py-0.5 rounded ${downPaymentType === 'amount' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+                    className={`px-1.5 py-0.5 rounded ${downPaymentType === 'amount' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
                   >
                     $
                   </button>
                   <button
                     type="button"
                     onClick={() => setDownPaymentType('percent')}
-                    className={`px-1.5 py-0.5 rounded ${downPaymentType === 'percent' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500'}`}
+                    className={`px-1.5 py-0.5 rounded ${downPaymentType === 'percent' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
                   >
                     %
                   </button>
@@ -208,26 +201,23 @@ export function MortgageCalculator() {
               </div>
               <div className="relative">
                 {downPaymentType === 'amount' ? (
-                  <>
-                    <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-                    <input
-                      type="number"
-                      value={downPayment}
-                      onChange={(e) => setDownPayment(Number(e.target.value))}
-                      className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-                    />
-                  </>
+                  <input
+                    type="number"
+                    value={downPayment}
+                    onChange={(e) => setDownPayment(Number(e.target.value))}
+                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-semibold text-slate-800 bg-white"
+                  />
                 ) : (
-                  <>
-                    <span className="absolute right-4 top-3 text-slate-400 font-medium">%</span>
-                    <input
-                      type="number"
-                      value={downPaymentPercent}
-                      onChange={(e) => setDownPaymentPercent(Number(e.target.value))}
-                      className="w-full pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-                    />
-                  </>
+                  <input
+                    type="number"
+                    value={downPaymentPercent}
+                    onChange={(e) => setDownPaymentPercent(Number(e.target.value))}
+                    className="w-full pl-4 pr-8 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-semibold text-slate-800 bg-white"
+                  />
                 )}
+                <span className={`absolute ${downPaymentType === 'amount' ? 'left-4' : 'right-4'} top-3 text-slate-400 font-medium`}>
+                  {downPaymentType === 'amount' ? '$' : '%'}
+                </span>
               </div>
               <div className="text-[10px] text-slate-400 mt-1 font-semibold">
                 {downPaymentType === 'amount' ? `${downPaymentPercent}% of house price` : `$${downPayment.toLocaleString()} down`}
@@ -236,151 +226,115 @@ export function MortgageCalculator() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Interest Rate (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={interestRate}
-                onChange={(e) => setInterestRate(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Loan Term</label>
-              <select
-                value={loanTerm}
-                onChange={(e) => setLoanTerm(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850 bg-white"
-              >
-                <option value={30}>30 Years (Fixed)</option>
-                <option value={20}>20 Years (Fixed)</option>
-                <option value={15}>15 Years (Fixed)</option>
-                <option value={10}>10 Years (Fixed)</option>
-              </select>
-            </div>
+            <ShellInput
+              label="Interest Rate"
+              suffix="%"
+              step="0.01"
+              value={interestRate}
+              onChange={(e) => setInterestRate(Number(e.target.value))}
+            />
+            <ShellSelect
+              label="Loan Term"
+              value={loanTerm}
+              onChange={(e) => setLoanTerm(Number(e.target.value))}
+            >
+              <option value={30}>30 Years (Fixed)</option>
+              <option value={20}>20 Years (Fixed)</option>
+              <option value={15}>15 Years (Fixed)</option>
+              <option value={10}>10 Years (Fixed)</option>
+            </ShellSelect>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Property Tax (%)</label>
-              <input
-                type="number"
-                step="0.01"
-                value={propertyTaxRate}
-                onChange={(e) => setPropertyTaxRate(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Home Ins. ($/year)</label>
-              <input
-                type="number"
-                value={homeInsurance}
-                onChange={(e) => setHomeInsurance(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-              />
-            </div>
+            <ShellInput
+              label="Property Tax"
+              suffix="%"
+              step="0.01"
+              value={propertyTaxRate}
+              onChange={(e) => setPropertyTaxRate(Number(e.target.value))}
+            />
+            <ShellInput
+              label="Home Ins. ($/year)"
+              suffix="$"
+              value={homeInsurance}
+              onChange={(e) => setHomeInsurance(Number(e.target.value))}
+            />
           </div>
 
           <div className="border-t border-slate-100 pt-4 space-y-4">
             <h3 className="text-sm font-bold text-slate-700">Early Payoff Option</h3>
-            <div>
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">Extra Monthly Payment ($)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-3 text-slate-400 font-medium">$</span>
-                <input
-                  type="number"
-                  value={extraPayment}
-                  onChange={(e) => setExtraPayment(Number(e.target.value))}
-                  className="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold text-slate-850"
-                  placeholder="e.g. 200"
-                />
-              </div>
-            </div>
+            <ShellInput
+              label="Extra Monthly Payment"
+              suffix="$"
+              value={extraPayment}
+              onChange={(e) => setExtraPayment(Number(e.target.value))}
+              placeholder="e.g. 200"
+            />
           </div>
         </div>
+      }
+      results={
+        <div className="space-y-6">
+          <ResultCard label="Estimated Monthly Payment (PITI)" value={formatCurrency(piti.totalMonthly)} />
+          <div className="text-xs text-slate-500 text-center -mt-4">
+            Loan Amount: {formatCurrency(piti.loanAmount)}
+          </div>
 
-        {/* Right Output Column */}
-        <div className="lg:col-span-6 space-y-6">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <h2 className="text-xl font-bold text-slate-800 border-b border-slate-200 pb-3">Monthly Payment Break Down</h2>
-
-            {/* Main Result Card */}
-            <div className="bg-emerald-600 text-white rounded-xl p-6 text-center shadow-md shadow-emerald-600/10">
-              <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
-                Estimated Monthly Payment (PITI)
-              </span>
-              <div className="text-3xl md:text-4xl font-extrabold tracking-tight">
-                {formatCurrency(piti.totalMonthly)}
-              </div>
-              <div className="text-xs opacity-75 mt-1">
-                Loan Amount: {formatCurrency(piti.loanAmount)}
-              </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center text-sm font-medium text-slate-700">
+              <span>Principal & Interest</span>
+              <span>{formatCurrency(piti.principalAndInterest)}</span>
             </div>
-
-            {/* Monthly Break Down Details */}
-            <div className="space-y-3">
-              <div className="flex justify-between items-center text-sm font-medium text-slate-700">
-                <span>Principal & Interest</span>
-                <span>{formatCurrency(piti.principalAndInterest)}</span>
-              </div>
-              
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Property Taxes</span>
-                <span>{formatCurrency(piti.propertyTax)}</span>
-              </div>
-
-              <div className="flex justify-between items-center text-sm text-slate-600">
-                <span>Homeowner Insurance</span>
-                <span>{formatCurrency(piti.homeInsurance)}</span>
-              </div>
-
-              {piti.pmi > 0 && (
-                <div className="flex justify-between items-center text-sm text-slate-600">
-                  <span>PMI (Mortgage Insurance)</span>
-                  <span className="text-red-500 font-medium">{formatCurrency(piti.pmi)}</span>
-                </div>
-              )}
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Property Taxes</span>
+              <span>{formatCurrency(piti.propertyTax)}</span>
             </div>
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Homeowner Insurance</span>
+              <span>{formatCurrency(piti.homeInsurance)}</span>
+            </div>
+            {piti.pmi > 0 && (
+              <div className="flex justify-between items-center text-sm text-slate-600">
+                <span>PMI (Mortgage Insurance)</span>
+                <span className="text-red-500 font-medium">{formatCurrency(piti.pmi)}</span>
+              </div>
+            )}
+          </div>
 
-            {/* Stacked Bar Graph */}
-            <div>
-              <div className="w-full h-3 rounded-full flex overflow-hidden bg-slate-200">
-                <div
-                  style={{ width: `${(piti.principalAndInterest / piti.totalMonthly) * 100 || 0}%` }}
-                  className="bg-emerald-500"
-                  title="Principal & Interest"
-                />
-                <div
-                  style={{ width: `${(piti.propertyTax / piti.totalMonthly) * 100 || 0}%` }}
-                  className="bg-amber-400"
-                  title="Property Tax"
-                />
-                <div
-                  style={{ width: `${(piti.homeInsurance / piti.totalMonthly) * 100 || 0}%` }}
-                  className="bg-indigo-400"
-                  title="Insurance"
-                />
-                <div
-                  style={{ width: `${(piti.pmi / piti.totalMonthly) * 100 || 0}%` }}
-                  className="bg-red-400"
-                  title="PMI"
-                />
-              </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-slate-500 font-medium">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>P & I</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span>Property Taxes</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400"></span>Insurance</span>
-                {piti.pmi > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400"></span>PMI</span>}
-              </div>
+          <div>
+            <div className="w-full h-3 rounded-full flex overflow-hidden bg-slate-200">
+              <div
+                style={{ width: `${(piti.principalAndInterest / piti.totalMonthly) * 100 || 0}%` }}
+                className="bg-teal-500"
+                title="Principal & Interest"
+              />
+              <div
+                style={{ width: `${(piti.propertyTax / piti.totalMonthly) * 100 || 0}%` }}
+                className="bg-amber-400"
+                title="Property Tax"
+              />
+              <div
+                style={{ width: `${(piti.homeInsurance / piti.totalMonthly) * 100 || 0}%` }}
+                className="bg-indigo-400"
+                title="Insurance"
+              />
+              <div
+                style={{ width: `${(piti.pmi / piti.totalMonthly) * 100 || 0}%` }}
+                className="bg-red-400"
+                title="PMI"
+              />
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-slate-500 font-medium">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-teal-500"></span>P & I</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400"></span>Property Taxes</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400"></span>Insurance</span>
+              {piti.pmi > 0 && <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400"></span>PMI</span>}
             </div>
           </div>
 
-          {/* Payoff Stats Card */}
           {extraPayment > 0 && (
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
-              <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider block mb-2">
+            <div className="bg-teal-50 rounded-xl p-4 border border-teal-100">
+              <h4 className="text-xs font-bold text-teal-800 uppercase tracking-wider block mb-2">
                 Extra Payoff Impact
               </h4>
               <div className="grid grid-cols-2 gap-4">
@@ -388,7 +342,7 @@ export function MortgageCalculator() {
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-0.5">
                     Time Saved
                   </span>
-                  <div className="text-md font-bold text-emerald-600">
+                  <div className="text-md font-bold text-teal-600">
                     {payoffStats.yearsSaved} Years
                   </div>
                 </div>
@@ -396,44 +350,44 @@ export function MortgageCalculator() {
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide block mb-0.5">
                     Interest Saved
                   </span>
-                  <div className="text-md font-bold text-emerald-600">
+                  <div className="text-md font-bold text-teal-600">
                     {formatCurrency(payoffStats.interestSaved)}
                   </div>
                 </div>
               </div>
             </div>
           )}
-
-          {/* Amortization Table snippet */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Amortization Schedule (First 5 Years)
-            </h3>
-            <div className="overflow-x-auto rounded-lg border border-slate-100">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
-                    <th className="p-2.5">Year</th>
-                    <th className="p-2.5">Interest Paid</th>
-                    <th className="p-2.5">Principal Paid</th>
-                    <th className="p-2.5">Ending Balance</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
-                  {amortization.slice(0, 5).map((row) => (
-                    <tr key={row.year} className="hover:bg-slate-50/50">
-                      <td className="p-2.5">Year {row.year}</td>
-                      <td className="p-2.5 text-red-500">-{formatCurrency(row.interestPaid)}</td>
-                      <td className="p-2.5 text-slate-800">{formatCurrency(row.principalPaid)}</td>
-                      <td className="p-2.5 text-slate-800 font-semibold">{formatCurrency(row.remainingBalance)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
+      }
+    />
+
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-2">
+      <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+        Amortization Schedule (First 5 Years)
+      </h3>
+      <div className="overflow-x-auto rounded-lg border border-slate-100">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+              <th className="p-2.5">Year</th>
+              <th className="p-2.5">Interest Paid</th>
+              <th className="p-2.5">Principal Paid</th>
+              <th className="p-2.5">Ending Balance</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-slate-600 font-medium">
+            {amortization.slice(0, 5).map((row) => (
+              <tr key={row.year} className="hover:bg-slate-50/50">
+                <td className="p-2.5">Year {row.year}</td>
+                <td className="p-2.5 text-red-500">-{formatCurrency(row.interestPaid)}</td>
+                <td className="p-2.5 text-slate-800">{formatCurrency(row.principalPaid)}</td>
+                <td className="p-2.5 text-slate-800 font-semibold">{formatCurrency(row.remainingBalance)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
+    </div>
     </div>
   );
 }

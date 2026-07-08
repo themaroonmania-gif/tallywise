@@ -166,7 +166,7 @@ export const calculators: CalculatorDef[] = [
     h1: 'GPA Calculator',
     seoTitle: 'GPA Calculator - Calculate Weighted & Cumulative GPA',
     seoDescription: 'Calculate your high school or college grade point average (GPA). Supports weighted grades (AP/IB/Honors) and cumulative semesters.',
-    formulaDescription: 'GPA = Total Grade Points Earned / Total Credit Hours Attempted. Where grade points are derived from letter grades (A = 4.0, B = 3.0, etc.).',
+    formulaDescription: 'GPA = Sum(Grade Points x Credit Hours) / Total Credit Hours. Grade points use the standard 4.0 scale (A = 4.0, A- = 3.7, B+ = 3.3, ... F = 0.0). Weighted GPA adds +0.5 per course for Honors and +1.0 for AP/IB before averaging.',
     explainerHtml: `
       <p>A Grade Point Average (GPA) calculator is an essential tool for high school and college students to track their academic standing. Your GPA is a single numerical representation of your overall academic performance across a semester or an entire degree program.</p>
       
@@ -466,7 +466,7 @@ export const calculators: CalculatorDef[] = [
     h1: 'Credit Card Payoff Calculator',
     seoTitle: 'Credit Card Interest Calculator - Monthly Payments & Savings',
     seoDescription: 'Find out how long it will take to pay off your credit card balance and how much interest you will accrue.',
-    formulaDescription: 'Daily compound interest calculation based on APR and monthly payment size.',
+    formulaDescription: 'Monthly compound interest simulation: each month adds Balance * (APR / 12) in interest, then subtracts your fixed payment or the minimum payment (greater of 3% of balance or $25).',
     explainerHtml: '<p>Determine how monthly payments affect your credit card interest and payoff timeline.</p>',
     faqs: [],
     relatedSlugs: ['debt-payoff-calculator', 'personal-loan-calculator']
@@ -804,7 +804,7 @@ export const calculators: CalculatorDef[] = [
     h1: 'Date Difference Calculator',
     seoTitle: 'Date Difference Calculator - Days Between Dates',
     seoDescription: 'Calculate the total number of days, weeks, months, or years between two dates.',
-    formulaDescription: 'Calendar difference between two dates, taking time zones and leap years into account.',
+    formulaDescription: 'Total Days = |End Date - Start Date|. Calendar breakdown (years/months/days) accounts for variable month lengths and leap years. If the start date is after the end date, the absolute difference is shown.',
     explainerHtml: '<p>Find the exact number of days, weeks, months, or years between any two dates.</p>',
     faqs: [],
     relatedSlugs: ['age-calculator', 'time-zone-calculator']
