@@ -6,11 +6,8 @@ try {
   
   if (fs.existsSync(wranglerBinPath)) {
     console.log('Wrapping wrangler to run build command on deploy...');
-    let content = fs.readFileSync(wranglerBinPath, 'utf8');
     
-    // Check if we already wrapped it or need to update the wrapper
-    if (!content.includes('TALLYWISE_BUILDING') || content.includes('../dist/cli.js')) {
-      const buildInjection = `
+    const buildInjection = `
 // Wrapped by Tallywise build script to guarantee OpenNext compilation before deployment
 if ((process.argv.includes('deploy') || process.argv.includes('publish')) && !process.env.TALLYWISE_BUILDING) {
   const { execSync } = require('child_process');
@@ -26,19 +23,18 @@ if ((process.argv.includes('deploy') || process.argv.includes('publish')) && !pr
   }
 }
 `;
-      
-      const cleanWranglerJs = `#!/usr/bin/env node
+    
+    const cleanWranglerJs = `#!/usr/bin/env node
 const { join } = require("path");
-require(join(__dirname, "../wrangler-dist/cli.js"));
 `;
-      
-      content = cleanWranglerJs.trim() + '\n' + buildInjection;
-      
-      fs.writeFileSync(wranglerBinPath, content, 'utf8');
-      console.log('Wrangler wrapped successfully with recursion safety and correct binary path!');
-    } else {
-      console.log('Wrangler is already wrapped with recursion safety.');
-    }
+    
+    const requireStatement = `require(join(__dirname, "../wrangler-dist/cli.js"));`;
+    
+    // Write buildInjection BEFORE requireStatement to ensure the build completes before Wrangler boots
+    const content = cleanWranglerJs.trim() + '\n' + buildInjection + '\n' + requireStatement;
+    
+    fs.writeFileSync(wranglerBinPath, content, 'utf8');
+    console.log('Wrangler wrapped successfully with build-before-require order!');
   } else {
     console.warn('Wrangler binary path not found, skipping wrap.');
   }
