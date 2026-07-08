@@ -64,6 +64,12 @@ export function Footer() {
             <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-4">Information</h4>
             <ul className="space-y-2 font-medium">
               <li>
+                <Link href="/about" className="hover:text-slate-800 transition-colors">About Us</Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-slate-800 transition-colors">Contact Us</Link>
+              </li>
+              <li>
                 <Link href="/sitemap.xml" className="hover:text-slate-800 transition-colors">Sitemap</Link>
               </li>
               <li>
