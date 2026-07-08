@@ -52,6 +52,21 @@ import { PowerConverter } from './conversion/PowerConverter';
 import { TorqueConverter } from './conversion/TorqueConverter';
 import { ShoeSizeConverter } from './conversion/ShoeSizeConverter';
 import { ClothingSizeConverter } from './conversion/ClothingSizeConverter';
+import { OnlineRuler } from './OnlineRuler';
+
+// Health category additions
+import { BmrCalculator } from './health/BmrCalculator';
+import { IdealWeightCalculator } from './health/IdealWeightCalculator';
+import { BodyFrameSizeCalculator } from './health/BodyFrameSizeCalculator';
+import { WaistHipRatioCalculator } from './health/WaistHipRatioCalculator';
+import { HeartRateZoneCalculator } from './health/HeartRateZoneCalculator';
+import { OvulationCalculator } from './health/OvulationCalculator';
+import { ConceptionDateCalculator } from './health/ConceptionDateCalculator';
+import { ChildGrowthPercentileCalculator } from './health/ChildGrowthPercentileCalculator';
+import { BabyWeightGainCalculator } from './health/BabyWeightGainCalculator';
+import { MenstrualCycleCalculator } from './health/MenstrualCycleCalculator';
+import { PregnancyWeightGainCalculator } from './health/PregnancyWeightGainCalculator';
+import { MenopauseAgeCalculator } from './health/MenopauseAgeCalculator';
 
 // Registry mapping slug names to their React components
 export const calculatorComponents: Record<string, React.ComponentType> = {
@@ -108,6 +123,21 @@ export const calculatorComponents: Record<string, React.ComponentType> = {
   'torque-converter': TorqueConverter,
   'shoe-size-converter': ShoeSizeConverter,
   'clothing-size-converter': ClothingSizeConverter,
+  'online-ruler': OnlineRuler,
+
+  // Health category additions
+  'bmr-calculator': BmrCalculator,
+  'ideal-weight-calculator': IdealWeightCalculator,
+  'body-frame-size-calculator': BodyFrameSizeCalculator,
+  'waist-hip-ratio-calculator': WaistHipRatioCalculator,
+  'heart-rate-zone-calculator': HeartRateZoneCalculator,
+  'ovulation-calculator': OvulationCalculator,
+  'conception-date-calculator': ConceptionDateCalculator,
+  'child-growth-percentile-calculator': ChildGrowthPercentileCalculator,
+  'baby-weight-gain-calculator': BabyWeightGainCalculator,
+  'menstrual-cycle-calculator': MenstrualCycleCalculator,
+  'pregnancy-weight-gain-calculator': PregnancyWeightGainCalculator,
+  'menopause-age-calculator': MenopauseAgeCalculator,
 };
 
 // Beautiful Coming Soon component to display for any unmapped calculator (if any are added in the future)
