@@ -22,10 +22,20 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
     let key = '';
 
     if (type === 'banner') {
-      const isMobile = window.innerWidth < 768;
-      key = isMobile ? 'c0e56ff887881c866dd9f0241b2ccb1c' : '16b352bc065ab8d1387c99cc4c08f868';
-      width = isMobile ? 320 : 728;
-      height = isMobile ? 50 : 90;
+      const w = window.innerWidth;
+      if (w < 468) {
+        key = 'c0e56ff887881c866dd9f0241b2ccb1c'; // Mobile Banner 320 x 50
+        width = 320;
+        height = 50;
+      } else if (w < 768) {
+        key = '69262f5b442fb28c5f7e7f6e45e77911'; // Tablet Banner 468 x 60
+        width = 468;
+        height = 60;
+      } else {
+        key = '16b352bc065ab8d1387c99cc4c08f868'; // Desktop Leaderboard 728 x 90
+        width = 728;
+        height = 90;
+      }
     } else if (type === 'rectangle') {
       key = '28ca4085a132e7009e4321c8f0eb39ba';
       width = 300;
@@ -71,7 +81,7 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
   // Setup layout heights to prevent Cumulative Layout Shift (CLS)
   let heightClass = 'h-[90px]';
   if (type === 'banner') {
-    heightClass = 'h-[50px] md:h-[90px]';
+    heightClass = 'h-[50px] sm:h-[60px] md:h-[90px]';
   } else if (type === 'rectangle') {
     heightClass = 'h-[250px]';
   } else if (type === 'bottom') {
