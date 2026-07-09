@@ -135,7 +135,7 @@ export const pdfTools: PdfToolDef[] = [
       { question: 'Can I delete pages here too?', answer: 'Yes. This tool lets you both reorder and remove pages in one place using page thumbnails.' },
     ],
     relatedSlugs: ['merge-pdf', 'remove-pages', 'rotate-pdf'],
-    status: 'live',
+    status: 'soon',
   },
   {
     slug: 'remove-pages',
@@ -331,7 +331,7 @@ export const pdfTools: PdfToolDef[] = [
       { question: 'Can I use a semi-transparent watermark?', answer: 'Yes. You control the opacity so your watermark can sit lightly behind the content or stand out boldly.' },
     ],
     relatedSlugs: ['page-numbers', 'edit-pdf', 'sign-pdf'],
-    status: 'soon',
+    status: 'live',
   },
   {
     slug: 'page-numbers',
@@ -351,7 +351,7 @@ export const pdfTools: PdfToolDef[] = [
       { question: 'Can I start numbering from a specific page?', answer: 'Yes. You can choose the starting number and which page the numbering begins on.' },
     ],
     relatedSlugs: ['watermark-pdf', 'edit-pdf', 'merge-pdf'],
-    status: 'soon',
+    status: 'live',
   },
 
   // ---------- SECURITY ----------
