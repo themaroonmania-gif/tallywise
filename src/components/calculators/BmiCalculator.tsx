@@ -24,6 +24,7 @@ export function BmiCalculator() {
   const [bmi, setBmi] = useState<number>(0);
   const [category, setCategory] = useState<string>('Normal');
   const [categoryColor, setCategoryColor] = useState<string>('text-emerald-600 bg-emerald-50 border-emerald-200');
+  const [resultColor, setResultColor] = useState<'indigo' | 'emerald' | 'amber' | 'rose'>('emerald');
 
   useEffect(() => {
     let calculatedBmi = 0;
@@ -48,15 +49,19 @@ export function BmiCalculator() {
       if (roundedBmi < 18.5) {
         setCategory('Underweight');
         setCategoryColor('text-blue-600 bg-blue-50 border-blue-200');
+        setResultColor('indigo');
       } else if (roundedBmi < 25.0) {
         setCategory('Normal Weight');
         setCategoryColor('text-emerald-600 bg-emerald-50 border-emerald-200');
+        setResultColor('emerald');
       } else if (roundedBmi < 30.0) {
         setCategory('Overweight');
         setCategoryColor('text-amber-600 bg-amber-50 border-amber-200');
+        setResultColor('amber');
       } else {
         setCategory('Obese');
         setCategoryColor('text-rose-600 bg-rose-50 border-rose-200');
+        setResultColor('rose');
       }
     } else {
       // Simplified approximate percentile bands (real BMI-for-age uses CDC/WHO
@@ -64,15 +69,19 @@ export function BmiCalculator() {
       if (roundedBmi < 14) {
         setCategory('Underweight (approx. < 5th percentile)');
         setCategoryColor('text-blue-600 bg-blue-50 border-blue-200');
+        setResultColor('indigo');
       } else if (roundedBmi < 20) {
         setCategory('Healthy Weight (approx. 5th-85th percentile)');
         setCategoryColor('text-emerald-600 bg-emerald-50 border-emerald-200');
+        setResultColor('emerald');
       } else if (roundedBmi < 24) {
         setCategory('Overweight (approx. 85th-95th percentile)');
         setCategoryColor('text-amber-600 bg-amber-50 border-amber-200');
+        setResultColor('amber');
       } else {
         setCategory('Obese (approx. ≥ 95th percentile)');
         setCategoryColor('text-rose-600 bg-rose-50 border-rose-200');
+        setResultColor('rose');
       }
     }
   }, [unitSystem, personType, weightLbs, heightFt, heightIn, weightKg, heightCm, ageYears, gender]);
@@ -219,7 +228,7 @@ export function BmiCalculator() {
       }
       results={
         <div className="space-y-4">
-          <ResultCard label="Your Calculated BMI" value={bmi || '0.0'} color="rose" />
+          <ResultCard label="Your Calculated BMI" value={bmi || '0.0'} color={resultColor} />
 
           <div className={`p-4 rounded-xl border text-center font-bold text-md transition-all ${categoryColor}`}>
             Category: {category}

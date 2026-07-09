@@ -4,6 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { CalculatorShell, ShellSelect, ResultCard } from './CalculatorShell';
 import { HealthDisclaimer } from './health/HealthDisclaimer';
 
+// Tailwind's compiler only picks up classes it can find as literal strings in
+// source, so this must be a static map rather than a `text-${x}-600` template.
+const categoryTextColorClass: Record<'indigo' | 'emerald' | 'amber' | 'rose', string> = {
+  indigo: 'text-indigo-600',
+  emerald: 'text-emerald-600',
+  amber: 'text-amber-600',
+  rose: 'text-rose-600',
+};
+
 export function BodyFatCalculator() {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [unitSystem, setUnitSystem] = useState<'imperial' | 'metric'>('imperial');
@@ -22,6 +31,7 @@ export function BodyFatCalculator() {
     leanMass: 0,
     category: 'Average',
   });
+  const [categoryColor, setCategoryColor] = useState<'indigo' | 'emerald' | 'amber' | 'rose'>('amber');
 
   useEffect(() => {
     let bodyFat = 0;
@@ -75,6 +85,15 @@ export function BodyFatCalculator() {
       else if (roundedBf < 32) category = 'Average';
       else category = 'Obese';
     }
+
+    const colorForCategory: Record<string, 'indigo' | 'emerald' | 'amber' | 'rose'> = {
+      'Essential Fat': 'indigo',
+      Athletes: 'emerald',
+      Fitness: 'emerald',
+      Average: 'amber',
+      Obese: 'rose',
+    };
+    setCategoryColor(colorForCategory[category] ?? 'amber');
 
     setResults({
       bodyFat: roundedBf,
@@ -167,7 +186,7 @@ export function BodyFatCalculator() {
       }
       results={
         <div className="space-y-4">
-          <ResultCard label="Body Fat Percentage" value={`${results.bodyFat}%`} color="rose" />
+          <ResultCard label="Body Fat Percentage" value={`${results.bodyFat}%`} color={categoryColor} />
 
           <div className="space-y-3 font-semibold text-slate-700 text-sm">
             <div className="flex justify-between items-center">
@@ -181,7 +200,7 @@ export function BodyFatCalculator() {
             <div className="border-t border-slate-200 my-2"></div>
             <div className="flex justify-between items-center text-slate-800 font-bold">
               <span>Fitness Classification</span>
-              <span className="text-rose-600">{results.category}</span>
+              <span className={categoryTextColorClass[categoryColor]}>{results.category}</span>
             </div>
           </div>
 
