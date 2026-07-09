@@ -9,7 +9,7 @@ export function Footer() {
   return (
     <footer className="mt-auto border-t border-slate-100 bg-slate-50 py-12 text-slate-500 text-xs">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-8">
           
           {/* Logo and Pitch */}
           <div className="space-y-4">
@@ -17,7 +17,7 @@ export function Footer() {
               Tally<span className="text-indigo-650 bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">wise</span>
             </span>
             <p className="text-slate-400 leading-relaxed font-medium">
-              Free, instant, in-browser calculators for everyday finance, health tracking, academics, and math conversions. Speed, precision, and zero friction.
+              Free, private, in-browser tools for everyday life — calculators for finance, health, and school, plus a full suite of PDF tools. No accounts, no uploads, zero friction.
             </p>
           </div>
 
@@ -43,21 +43,24 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Top Tools */}
+          {/* PDF Tools */}
           <div>
-            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-4">Popular Tools</h4>
+            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-4">PDF Tools</h4>
             <ul className="space-y-2 font-medium">
               <li>
-                <Link href="/finance/paycheck-calculator" className="hover:text-slate-800 transition-colors">Paycheck Calculator</Link>
+                <Link href="/pdf" className="hover:text-slate-800 transition-colors">All PDF Tools</Link>
               </li>
               <li>
-                <Link href="/finance/mortgage-calculator" className="hover:text-slate-800 transition-colors">Mortgage Calculator</Link>
+                <Link href="/pdf/merge-pdf" className="hover:text-slate-800 transition-colors">Merge PDF</Link>
               </li>
               <li>
-                <Link href="/health/bmi-calculator" className="hover:text-slate-800 transition-colors">BMI Calculator</Link>
+                <Link href="/pdf/split-pdf" className="hover:text-slate-800 transition-colors">Split PDF</Link>
               </li>
               <li>
-                <Link href="/school/gpa-calculator" className="hover:text-slate-800 transition-colors">GPA Calculator</Link>
+                <Link href="/pdf/compress-pdf" className="hover:text-slate-800 transition-colors">Compress PDF</Link>
+              </li>
+              <li>
+                <Link href="/pdf/pdf-to-jpg" className="hover:text-slate-800 transition-colors">PDF to JPG</Link>
               </li>
             </ul>
           </div>

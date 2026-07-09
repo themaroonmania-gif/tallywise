@@ -13,27 +13,28 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_TITLE = "Tallywise — Free Online Calculators & PDF Tools";
+const SITE_DESC =
+  "Free, private, in-browser tools: calculators for finance, health, and school, plus a full suite of PDF tools (merge, split, compress, convert, edit). No signup, no uploads, no paywalls.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://tallywise.co"),
   title: {
-    default: "Tallywise — Free Online Calculators for Finance, Health, School & Conversions",
+    default: SITE_TITLE,
     template: "%s | Tallywise",
   },
-  description:
-    "Free, instant, in-browser calculators for finance, health, academics, everyday utilities, and unit conversions. No signup, no paywalls — just accurate results.",
+  description: SITE_DESC,
   openGraph: {
     type: "website",
     siteName: "Tallywise",
-    title: "Tallywise — Free Online Calculators for Finance, Health, School & Conversions",
-    description:
-      "Free, instant, in-browser calculators for finance, health, academics, everyday utilities, and unit conversions. No signup, no paywalls — just accurate results.",
+    title: SITE_TITLE,
+    description: SITE_DESC,
     images: ["/og-default.png"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tallywise — Free Online Calculators for Finance, Health, School & Conversions",
-    description:
-      "Free, instant, in-browser calculators for finance, health, academics, everyday utilities, and unit conversions. No signup, no paywalls — just accurate results.",
+    title: SITE_TITLE,
+    description: SITE_DESC,
     images: ["/og-default.png"],
   },
 };

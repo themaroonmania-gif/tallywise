@@ -53,13 +53,13 @@ export default function Home() {
                   </h1>
 
                   <p className="text-slate-500 text-md md:text-lg max-w-xl mx-auto font-medium">
-                    Free, accurate, in-browser calculators across finance, health, academics, and math. No accounts, no paywalls, instant outputs.
+                    Free, private, in-browser tools — accurate calculators for finance, health, and school, plus a full suite of PDF tools. No accounts, no paywalls, instant results.
                   </p>
 
                   <div className="max-w-md mx-auto relative pt-4">
                     <input
                       type="text"
-                      placeholder="Search 25+ calculators (e.g. paycheck, gpa)..."
+                      placeholder="Search 60+ calculators (e.g. paycheck, gpa)..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full px-5 py-3.5 pl-12 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-medium text-slate-800 shadow-sm text-sm"
@@ -77,6 +77,33 @@ export default function Home() {
                   </div>
                 </div>
               </section>
+
+              <Link
+                href="/pdf"
+                className="group flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl border border-rose-100 bg-gradient-to-r from-rose-50 to-indigo-50 p-6 md:p-8 transition-all hover:shadow-xl hover:shadow-rose-500/5"
+              >
+                <div className="flex items-center gap-4 text-center sm:text-left">
+                  <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-rose-600 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-lg md:text-xl font-black text-slate-800">
+                      New: <span className="text-rose-600">Free PDF Tools</span>
+                    </h2>
+                    <p className="text-xs md:text-sm font-medium text-slate-500">
+                      Merge, split, compress, convert, edit &amp; sign PDFs — 100% in your browser, files never uploaded.
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-transform group-hover:translate-x-0.5">
+                  Open PDF Tools
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </span>
+              </Link>
 
               <section className="space-y-8">
                 <div className="flex flex-wrap items-center justify-center gap-2">
