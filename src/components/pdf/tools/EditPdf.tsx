@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+/* eslint-disable @next/next/no-img-element */
+
+import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 import {
   ChevronLeft,
@@ -11,13 +13,19 @@ import {
   Loader2,
   Minus,
   MousePointer2,
+  PanelLeft,
   Pen,
   Plus,
+  Redo2,
   Save,
+  ScanText,
   Square,
   TextCursorInput,
   Trash2,
   Type,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import {
   PdfToolShell,
@@ -55,6 +63,12 @@ interface RenderedPageInfo {
   w: number;
   h: number;
   textBoxes: PdfTextBox[];
+}
+
+interface OcrStatus {
+  page: number;
+  label: string;
+  progress: number;
 }
 
 type El =
@@ -129,6 +143,45 @@ interface RawTextRun {
   bottom: number;
   fontSize: number;
   hasEOL: boolean;
+}
+
+interface OcrLine {
+  text: string;
+  confidence?: number;
+  bbox?: {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+  };
+}
+
+interface OcrParagraph {
+  lines?: OcrLine[];
+}
+
+interface OcrBlock {
+  paragraphs?: OcrParagraph[];
+}
+
+interface OcrWorker {
+  setParameters: (params: Record<string, string>) => Promise<unknown>;
+  recognize: (
+    image: Blob | string,
+    options?: Record<string, unknown>,
+    output?: { blocks?: boolean }
+  ) => Promise<{ data: { blocks?: OcrBlock[] | null } }>;
+  terminate: () => Promise<unknown>;
+}
+
+interface TesseractModule {
+  createWorker: (
+    langs?: string,
+    oem?: number,
+    options?: {
+      logger?: (message: { status?: string; progress?: number }) => void;
+    }
+  ) => Promise<OcrWorker>;
 }
 
 const PREVIEW_SCALE = 1.6;
@@ -257,6 +310,45 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
   });
 }
 
+function ocrBlocksToTextBoxes(blocks: OcrBlock[] | null | undefined, pageIndex: number, width: number, height: number) {
+  const boxes: PdfTextBox[] = [];
+
+  blocks?.forEach((block, blockIndex) => {
+    block.paragraphs?.forEach((paragraph, paragraphIndex) => {
+      paragraph.lines?.forEach((line, lineIndex) => {
+        const text = line.text.trim();
+        const box = line.bbox;
+        if (!text || !box) return;
+
+        const x0 = clamp(box.x0, 0, width);
+        const y0 = clamp(box.y0, 0, height);
+        const x1 = clamp(box.x1, x0 + 1, width);
+        const y1 = clamp(box.y1, y0 + 1, height);
+        const lineHeight = y1 - y0;
+        const padX = Math.max(2, lineHeight * 0.12);
+        const padY = Math.max(1, lineHeight * 0.16);
+        const left = clamp(x0 - padX, 0, width);
+        const top = clamp(y0 - padY, 0, height);
+        const right = clamp(x1 + padX, left + 1, width);
+        const bottom = clamp(y1 + padY, top + 1, height);
+
+        boxes.push({
+          id: `ocr-${pageIndex}-${blockIndex}-${paragraphIndex}-${lineIndex}-${uid()}`,
+          page: pageIndex,
+          text,
+          xPct: (left / width) * 100,
+          yPct: (top / height) * 100,
+          wPct: ((right - left) / width) * 100,
+          hPct: ((bottom - top) / height) * 100,
+          fontSizePct: clamp((lineHeight / height) * 100 * 0.78, 0.7, 8),
+        });
+      });
+    });
+  });
+
+  return boxes;
+}
+
 function wrapText(text: string, font: PDFFont, size: number, maxWidth: number) {
   const lines: string[] = [];
   const sourceLines = text.replace(/\r/g, '').split('\n');
@@ -334,19 +426,24 @@ export function EditPdf() {
   const [tool, setTool] = useState<Tool>('editText');
   const [color, setColor] = useState(COLORS[0]);
   const [els, setEls] = useState<El[]>([]);
+  const [pastEls, setPastEls] = useState<El[][]>([]);
+  const [futureEls, setFutureEls] = useState<El[][]>([]);
   const [selected, setSelected] = useState<Selected>(null);
   const [rendering, setRendering] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ocrStatus, setOcrStatus] = useState<OcrStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ blob: Blob; name: string; size: number } | null>(null);
   const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 });
   const [focusElementId, setFocusElementId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const drafting = useRef<{ id: string; startX: number; startY: number } | null>(null);
   const dragging = useRef<{ id: string; offX: number; offY: number } | null>(null);
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
+  const textEditHistory = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const node = overlayRef.current;
@@ -386,6 +483,44 @@ export function EditPdf() {
       .map((el) => el.sourceId)
   );
   const detectedText = page?.textBoxes.filter((box) => !editedSourceIds.has(box.id)) ?? [];
+  const displayWidth = page ? Math.max(280, Math.min(page.w / PREVIEW_SCALE, 860) * zoom) : 0;
+
+  const pushHistorySnapshot = () => {
+    setPastEls((prev) => [...prev, els].slice(-60));
+    setFutureEls([]);
+  };
+
+  const commitEls = (updater: (prev: El[]) => El[]) => {
+    setEls((prev) => {
+      const next = updater(prev);
+      if (next === prev) return prev;
+      setPastEls((history) => [...history, prev].slice(-60));
+      setFutureEls([]);
+      return next;
+    });
+  };
+
+  const undo = () => {
+    setPastEls((prev) => {
+      const previous = prev[prev.length - 1];
+      if (!previous) return prev;
+      setFutureEls((future) => [els, ...future].slice(0, 60));
+      setEls(previous);
+      setSelected(null);
+      return prev.slice(0, -1);
+    });
+  };
+
+  const redo = () => {
+    setFutureEls((prev) => {
+      const next = prev[0];
+      if (!next) return prev;
+      setPastEls((history) => [...history, els].slice(-60));
+      setEls(next);
+      setSelected(null);
+      return prev.slice(1);
+    });
+  };
 
   const onFiles = async (files: File[]) => {
     setError(null);
@@ -397,7 +532,12 @@ export function EditPdf() {
     setRendering(true);
     setCurrent(0);
     setEls([]);
+    setPastEls([]);
+    setFutureEls([]);
     setSelected(null);
+    setOcrStatus(null);
+    setZoom(1);
+    textEditHistory.current.clear();
 
     try {
       const data = await f.arrayBuffer();
@@ -437,9 +577,13 @@ export function EditPdf() {
     setEls((prev) => prev.map((el) => (el.id === id ? updater(el) : el)));
   };
 
+  const commitUpdateEl = (id: string, updater: (el: El) => El) => {
+    commitEls((prev) => prev.map((el) => (el.id === id ? updater(el) : el)));
+  };
+
   const createText = (xPct: number, yPct: number) => {
     const id = uid();
-    setEls((prev) => [
+    commitEls((prev) => [
       ...prev,
       {
         id,
@@ -468,7 +612,7 @@ export function EditPdf() {
     }
 
     const id = uid();
-    setEls((prev) => [
+    commitEls((prev) => [
       ...prev,
       {
         id,
@@ -501,6 +645,7 @@ export function EditPdf() {
     if (tool === 'whiteout' || tool === 'highlight' || tool === 'rect') {
       const id = uid();
       drafting.current = { id, startX: xPct, startY: yPct };
+      pushHistorySnapshot();
       setEls((prev) => [...prev, { id, page: current, type: tool, xPct, yPct, wPct: 0, hPct: 0, color }]);
       setSelected({ kind: 'element', id });
       overlayRef.current?.setPointerCapture(e.pointerId);
@@ -510,6 +655,7 @@ export function EditPdf() {
     if (tool === 'pen') {
       const id = uid();
       drafting.current = { id, startX: xPct, startY: yPct };
+      pushHistorySnapshot();
       setEls((prev) => [...prev, { id, page: current, type: 'pen', points: [{ xPct, yPct }], color }]);
       setSelected({ kind: 'element', id });
       overlayRef.current?.setPointerCapture(e.pointerId);
@@ -586,6 +732,7 @@ export function EditPdf() {
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
+    pushHistorySnapshot();
     dragging.current = { id: el.id, offX: xPct - el.xPct, offY: yPct - el.yPct };
     overlayRef.current?.setPointerCapture(e.pointerId);
   };
@@ -595,6 +742,7 @@ export function EditPdf() {
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
+    pushHistorySnapshot();
     resizing.current = { id: el.id, startX: xPct, startY: yPct, startW: el.wPct, startH: 'hPct' in el ? el.hPct : 1 };
     overlayRef.current?.setPointerCapture(e.pointerId);
   };
@@ -602,16 +750,16 @@ export function EditPdf() {
   const deleteSelected = () => {
     if (!selectedElement) return;
     if (selectedElement.type === 'replaceText') {
-      updateEl(selectedElement.id, (el) => (el.type === 'replaceText' ? { ...el, text: '' } : el));
+      commitUpdateEl(selectedElement.id, (el) => (el.type === 'replaceText' ? { ...el, text: '' } : el));
       return;
     }
-    setEls((prev) => prev.filter((el) => el.id !== selectedElement.id));
+    commitEls((prev) => prev.filter((el) => el.id !== selectedElement.id));
     setSelected(null);
   };
 
   const changeFontSize = (delta: number) => {
     if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
-    updateEl(selectedElement.id, (el) =>
+    commitUpdateEl(selectedElement.id, (el) =>
       el.type === 'text' || el.type === 'replaceText'
         ? { ...el, fontSizePct: clamp(el.fontSizePct + delta, 0.7, 10) }
         : el
@@ -627,7 +775,7 @@ export function EditPdf() {
       const id = uid();
       const wPct = 32;
       const hPct = clamp(wPct * (size.height / size.width) * (page.w / page.h), 4, 70);
-      setEls((prev) => [
+      commitEls((prev) => [
         ...prev,
         {
           id,
@@ -646,6 +794,68 @@ export function EditPdf() {
     } catch (e) {
       console.error(e);
       setError('Could not add that image. Use a PNG or JPG file.');
+    }
+  };
+
+  const runOcrOnCurrentPage = async () => {
+    if (!page || ocrStatus) return;
+
+    setError(null);
+    setOcrStatus({ page: current, label: 'Loading OCR engine', progress: 0 });
+
+    let worker: OcrWorker | null = null;
+    try {
+      const loadedTesseract = (await import('tesseract.js')) as unknown as Partial<TesseractModule> & {
+        default?: Partial<TesseractModule>;
+      };
+      const tesseract = loadedTesseract.createWorker ? loadedTesseract : loadedTesseract.default;
+      if (!tesseract?.createWorker) throw new Error('OCR engine did not load.');
+
+      worker = await tesseract.createWorker('eng', 1, {
+        logger: (message) => {
+          if (!message.status) return;
+          setOcrStatus({
+            page: current,
+            label: message.status.replace(/_/g, ' '),
+            progress: clamp(message.progress ?? 0, 0, 1),
+          });
+        },
+      });
+      await worker.setParameters({
+        preserve_interword_spaces: '1',
+        tessedit_pageseg_mode: '11',
+      });
+
+      setOcrStatus({ page: current, label: 'Recognizing text', progress: 0.45 });
+      const imageBlob = await fetch(page.url).then((res) => res.blob());
+      const result = await worker.recognize(imageBlob, {}, { blocks: true });
+      const boxes = ocrBlocksToTextBoxes(result.data.blocks, current, page.w, page.h);
+
+      if (!boxes.length) {
+        setError('OCR did not find readable text on this page. Try a sharper scan, or use Erase + Text manually.');
+        return;
+      }
+
+      setPages((prev) =>
+        prev.map((info, index) =>
+          index === current
+            ? {
+                ...info,
+                textBoxes: [
+                  ...info.textBoxes.filter((box) => !box.id.startsWith(`ocr-${current}-`)),
+                  ...boxes,
+                ],
+              }
+            : info
+        )
+      );
+      setTool('editText');
+    } catch (e) {
+      console.error(e);
+      setError('OCR could not read this page. Try a clearer scan, or use Erase + Text manually.');
+    } finally {
+      await worker?.terminate().catch(() => undefined);
+      setOcrStatus(null);
     }
   };
 
@@ -758,12 +968,51 @@ export function EditPdf() {
     setFile(null);
     setPages([]);
     setEls([]);
+    setPastEls([]);
+    setFutureEls([]);
     setSelected(null);
     setResult(null);
     setError(null);
+    setOcrStatus(null);
     setCurrent(0);
     setTool('editText');
+    setZoom(1);
+    textEditHistory.current.clear();
   };
+
+  const handleEditorShortcut = useEffectEvent((event: KeyboardEvent) => {
+    const target = event.target as HTMLElement | null;
+    const isTyping = Boolean(target?.closest('[contenteditable="true"], input, textarea, select'));
+    const isMod = event.metaKey || event.ctrlKey;
+
+    if (isMod && event.key.toLowerCase() === 'z' && !event.shiftKey) {
+      event.preventDefault();
+      undo();
+      return;
+    }
+
+    if ((isMod && event.key.toLowerCase() === 'y') || (isMod && event.shiftKey && event.key.toLowerCase() === 'z')) {
+      event.preventDefault();
+      redo();
+      return;
+    }
+
+    if (!isTyping && (event.key === 'Backspace' || event.key === 'Delete')) {
+      event.preventDefault();
+      deleteSelected();
+    }
+  });
+
+  useEffect(() => {
+    if (!file) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      handleEditorShortcut(event);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [file]);
 
   if (result) {
     return (
@@ -821,269 +1070,398 @@ export function EditPdf() {
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
-        {tools.map(([t, icon, label]) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTool(t)}
-            title={label}
-            aria-label={label}
-            className={`flex h-9 w-9 items-center justify-center rounded-md border text-sm transition-all ${
-              tool === t
-                ? 'border-rose-600 bg-rose-600 text-white'
-                : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300 hover:text-rose-600'
-            }`}
-          >
-            {icon}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => imageInputRef.current?.click()}
-          title="Add image"
-          aria-label="Add image"
-          className={`flex h-9 w-9 items-center justify-center rounded-md border text-sm transition-all ${
-            tool === 'image'
-              ? 'border-rose-600 bg-rose-600 text-white'
-              : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300 hover:text-rose-600'
-          }`}
-        >
-          <ImagePlus className="h-4 w-4" />
-        </button>
-
-        <div className="mx-1 h-7 w-px bg-slate-200" />
-
-        {COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => setColor(c)}
-            title={`Color ${c}`}
-            aria-label={`Color ${c}`}
-            className={`h-7 w-7 rounded-full border transition-transform ${
-              color === c ? 'border-slate-900 ring-2 ring-slate-200' : 'border-slate-200'
-            }`}
-            style={{ backgroundColor: c }}
-          />
-        ))}
-
-        {selectedElement && (selectedElement.type === 'text' || selectedElement.type === 'replaceText') && (
-          <>
-            <div className="mx-1 h-7 w-px bg-slate-200" />
+      <div className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur">
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {tools.map(([t, icon, label]) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTool(t)}
+                title={label}
+                aria-label={label}
+                className={`flex h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-all sm:w-auto sm:gap-1.5 sm:px-3 ${
+                  tool === t
+                    ? 'border-rose-600 bg-rose-600 text-white shadow-sm shadow-rose-600/20'
+                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300 hover:text-rose-600'
+                }`}
+              >
+                {icon}
+                <span className="hidden text-xs sm:inline">{label}</span>
+              </button>
+            ))}
             <button
               type="button"
-              title="Smaller text"
-              onClick={() => changeFontSize(-0.25)}
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300"
+              onClick={() => imageInputRef.current?.click()}
+              title="Add image"
+              aria-label="Add image"
+              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm font-bold text-slate-600 transition-all hover:border-rose-300 hover:text-rose-600 sm:gap-1.5 sm:px-3"
             >
-              <Minus className="h-4 w-4" />
+              <ImagePlus className="h-4 w-4" />
+              <span className="hidden text-xs sm:inline">Image</span>
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={undo}
+              disabled={!pastEls.length}
+              title="Undo"
+              aria-label="Undo"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <Undo2 className="h-4 w-4" />
             </button>
             <button
               type="button"
-              title="Larger text"
-              onClick={() => changeFontSize(0.25)}
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300"
+              onClick={redo}
+              disabled={!futureEls.length}
+              title="Redo"
+              aria-label="Redo"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
             >
-              <Plus className="h-4 w-4" />
+              <Redo2 className="h-4 w-4" />
             </button>
-          </>
-        )}
 
-        {selectedElement && (
-          <button
-            type="button"
-            onClick={deleteSelected}
-            title="Delete"
-            className="ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-rose-600 hover:border-rose-300"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
-      </div>
+            <div className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
 
-      <div
-        ref={overlayRef}
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        className="relative mx-auto max-w-3xl touch-none select-none overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
-        style={{ cursor: tool === 'select' ? 'default' : tool === 'editText' ? 'text' : 'crosshair' }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={page.url} alt={`Page ${current + 1}`} className="pointer-events-none w-full" draggable={false} />
-
-        {tool === 'editText' &&
-          detectedText.map((box) => (
             <button
-              key={box.id}
               type="button"
-              data-editor-control="true"
-              title={box.text}
-              aria-label={`Edit text: ${box.text}`}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                editSourceText(box);
-              }}
-              className="absolute rounded-[2px] border border-sky-500/35 bg-sky-400/10 opacity-60 transition-opacity hover:opacity-100 focus:opacity-100"
-              style={{
-                left: `${box.xPct}%`,
-                top: `${box.yPct}%`,
-                width: `${box.wPct}%`,
-                height: `${box.hPct}%`,
-              }}
+              onClick={() => setZoom((value) => clamp(Number((value - 0.15).toFixed(2)), 0.65, 2.4))}
+              disabled={zoom <= 0.65}
+              title="Zoom out"
+              aria-label="Zoom out"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </button>
+            <span className="min-w-12 text-center text-xs font-black text-slate-500">{Math.round(zoom * 100)}%</span>
+            <button
+              type="button"
+              onClick={() => setZoom((value) => clamp(Number((value + 0.15).toFixed(2)), 0.65, 2.4))}
+              disabled={zoom >= 2.4}
+              title="Zoom in"
+              aria-label="Zoom in"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
+
+            <button
+              type="button"
+              onClick={runOcrOnCurrentPage}
+              disabled={Boolean(ocrStatus)}
+              title="OCR this page"
+              aria-label="OCR this page"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 text-xs font-black text-sky-700 transition-all hover:border-sky-300 disabled:cursor-wait disabled:opacity-60"
+            >
+              {ocrStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
+              OCR
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
+          <span className="mr-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Color</span>
+          {COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setColor(c)}
+              title={`Color ${c}`}
+              aria-label={`Color ${c}`}
+              className={`h-7 w-7 rounded-full border transition-transform ${
+                color === c ? 'border-slate-900 ring-2 ring-slate-200' : 'border-slate-200'
+              }`}
+              style={{ backgroundColor: c }}
             />
           ))}
 
-        {currentEls.map((el) => {
-          const selectedThis = selectedElement?.id === el.id;
-
-          if (el.type === 'text' || el.type === 'replaceText') {
-            const fontSize = Math.max(8, (el.fontSizePct / 100) * overlaySize.height);
-            const textHeight = el.type === 'replaceText' ? el.hPct : Math.max(3, (fontSize / Math.max(1, overlaySize.height)) * 100 * 1.25);
-
-            return (
-              <div
-                key={el.id}
-                data-editor-control="true"
-                onPointerDown={(e) => startDrag(e, el)}
-                style={{
-                  left: `${el.xPct}%`,
-                  top: `${el.yPct}%`,
-                  width: `${el.wPct}%`,
-                  minHeight: `${textHeight}%`,
-                  backgroundColor: el.type === 'replaceText' ? '#ffffff' : 'transparent',
-                  color: el.color,
-                  fontSize,
-                  outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
-                }}
-                className="absolute cursor-move overflow-hidden whitespace-pre-wrap px-[1px] font-semibold leading-tight"
+          {selectedElement && (selectedElement.type === 'text' || selectedElement.type === 'replaceText') && (
+            <>
+              <div className="mx-1 h-7 w-px bg-slate-200" />
+              <button
+                type="button"
+                title="Smaller text"
+                aria-label="Smaller text"
+                onClick={() => changeFontSize(-0.25)}
+                className="flex h-9 items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 hover:border-rose-300"
               >
-                <div
-                  data-editable-id={el.id}
-                  contentEditable={selectedThis}
-                  suppressContentEditableWarning
-                  onPointerDown={(e) => {
-                    if (selectedThis) e.stopPropagation();
-                  }}
-                  onInput={(e) => {
-                    const text = e.currentTarget.innerText.replace(/\n{3,}/g, '\n\n');
-                    updateEl(el.id, (currentEl) =>
-                      currentEl.type === 'text' || currentEl.type === 'replaceText'
-                        ? { ...currentEl, text }
-                        : currentEl
-                    );
-                  }}
-                  className="min-h-[1em] outline-none"
-                >
-                  {el.text}
-                </div>
-                {selectedThis && el.type === 'replaceText' && (
-                  <span
-                    data-editor-control="true"
-                    onPointerDown={(e) => startResize(e, el)}
-                    className="absolute bottom-0 right-0 h-3 w-3 cursor-nwse-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
-                  />
-                )}
-              </div>
-            );
-          }
-
-          if (el.type === 'whiteout' || el.type === 'highlight' || el.type === 'rect' || el.type === 'image') {
-            return (
-              <div
-                key={el.id}
-                data-editor-control="true"
-                onPointerDown={(e) => startDrag(e, el)}
-                style={{
-                  left: `${el.xPct}%`,
-                  top: `${el.yPct}%`,
-                  width: `${el.wPct}%`,
-                  height: `${el.hPct}%`,
-                  backgroundColor:
-                    el.type === 'whiteout' ? '#ffffff' : el.type === 'highlight' ? el.color : 'transparent',
-                  opacity: el.type === 'highlight' ? 0.35 : 1,
-                  border:
-                    el.type === 'rect'
-                      ? `2px solid ${el.color}`
-                      : selectedThis
-                        ? '1px solid #e11d48'
-                        : el.type === 'whiteout'
-                          ? '1px solid rgba(15,23,42,0.08)'
-                          : 'none',
-                  outline: selectedThis ? '1px solid #e11d48' : 'none',
-                }}
-                className="absolute cursor-move"
+                <Minus className="h-4 w-4" />
+                Text
+              </button>
+              <button
+                type="button"
+                title="Larger text"
+                aria-label="Larger text"
+                onClick={() => changeFontSize(0.25)}
+                className="flex h-9 items-center justify-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 hover:border-rose-300"
               >
-                {el.type === 'image' && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={el.dataUrl} alt="" className="h-full w-full object-fill" draggable={false} />
-                )}
-                {selectedThis && (
-                  <span
-                    data-editor-control="true"
-                    onPointerDown={(e) => startResize(e, el)}
-                    className="absolute bottom-0 right-0 h-3 w-3 cursor-nwse-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
-                  />
-                )}
-              </div>
-            );
-          }
+                <Plus className="h-4 w-4" />
+                Text
+              </button>
+            </>
+          )}
 
-          if (el.type === 'pen') {
-            return (
-              <svg
-                key={el.id}
-                className="pointer-events-none absolute inset-0 h-full w-full"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-              >
-                <polyline
-                  points={el.points.map((p) => `${p.xPct},${p.yPct}`).join(' ')}
-                  fill="none"
-                  stroke={el.color}
-                  strokeWidth={0.4}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
-            );
-          }
-
-          return null;
-        })}
+          {selectedElement && (
+            <button
+              type="button"
+              onClick={deleteSelected}
+              title={selectedElement.type === 'replaceText' ? 'Delete replacement text' : 'Delete selected item'}
+              aria-label={selectedElement.type === 'replaceText' ? 'Delete replacement text' : 'Delete selected item'}
+              className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-black text-rose-600 hover:border-rose-300"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <button onClick={reset} className="text-xs font-bold text-rose-600 hover:underline">
-          Change file
-        </button>
-        <div className="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setCurrent((c) => Math.max(0, c - 1))}
-            disabled={current === 0}
-            className="rounded-md border border-slate-200 p-2 text-slate-600 disabled:opacity-30"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <span className="text-xs font-bold text-slate-500">
-            Page {current + 1} of {pages.length}
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
-            disabled={current === pages.length - 1}
-            className="rounded-md border border-slate-200 p-2 text-slate-600 disabled:opacity-30"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+      {ocrStatus && (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm font-semibold text-sky-800">
+          <div className="flex items-center justify-between gap-3">
+            <span>
+              Reading page {ocrStatus.page + 1}: {ocrStatus.label}
+            </span>
+            <span>{Math.round(ocrStatus.progress * 100)}%</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
+            <div
+              className="h-full rounded-full bg-sky-500 transition-all"
+              style={{ width: `${Math.max(8, ocrStatus.progress * 100)}%` }}
+            />
+          </div>
         </div>
-        <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-          {page.textBoxes.length ? `${page.textBoxes.length} text lines detected` : 'No text layer detected'}
-        </span>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-[118px_minmax(0,1fr)]">
+        <aside className="order-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
+          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-wide text-slate-400">
+            <PanelLeft className="h-3.5 w-3.5" />
+            Pages
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-x-visible lg:pb-0">
+            {pages.map((p, index) => (
+              <button
+                key={p.url}
+                type="button"
+                onClick={() => {
+                  setCurrent(index);
+                  setSelected(null);
+                }}
+                className={`min-w-20 rounded-xl border bg-white p-1 text-left transition-all lg:min-w-0 ${
+                  index === current
+                    ? 'border-rose-500 shadow-sm shadow-rose-500/20'
+                    : 'border-slate-200 hover:border-rose-200'
+                }`}
+                aria-label={`Go to page ${index + 1}`}
+              >
+                <img src={p.url} alt={`Page ${index + 1} thumbnail`} className="h-24 w-full rounded-lg object-cover lg:h-auto" />
+                <span className="mt-1 block text-center text-[10px] font-black text-slate-500">Page {index + 1}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        <section className="order-1 min-w-0 lg:order-2">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <button onClick={reset} className="text-xs font-bold text-rose-600 hover:underline">
+              Change file
+            </button>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+                disabled={current === 0}
+                aria-label="Previous page"
+                className="rounded-md border border-slate-200 bg-white p-2 text-slate-600 disabled:opacity-30"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-xs font-bold text-slate-500">
+                Page {current + 1} of {pages.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
+                disabled={current === pages.length - 1}
+                aria-label="Next page"
+                className="rounded-md border border-slate-200 bg-white p-2 text-slate-600 disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+              {page.textBoxes.length ? `${page.textBoxes.length} editable text lines` : 'No text layer yet. Try OCR.'}
+            </span>
+          </div>
+
+          <div className="max-h-[76vh] overflow-auto rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_1px_1px,rgba(100,116,139,0.20)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
+            <div className="mx-auto" style={{ width: `${displayWidth}px`, maxWidth: zoom <= 1 ? '100%' : undefined }}>
+              <div
+                ref={overlayRef}
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                className="relative touch-none select-none overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                style={{ cursor: tool === 'select' ? 'default' : tool === 'editText' ? 'text' : 'crosshair' }}
+              >
+                <img src={page.url} alt={`Page ${current + 1}`} className="pointer-events-none w-full" draggable={false} />
+
+                {tool === 'editText' &&
+                  detectedText.map((box) => (
+                    <button
+                      key={box.id}
+                      type="button"
+                      data-editor-control="true"
+                      title={box.text}
+                      aria-label={`Edit text: ${box.text}`}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        editSourceText(box);
+                      }}
+                      className="absolute rounded-[2px] border border-sky-500/35 bg-sky-400/10 opacity-60 transition-opacity hover:opacity-100 focus:opacity-100"
+                      style={{
+                        left: `${box.xPct}%`,
+                        top: `${box.yPct}%`,
+                        width: `${box.wPct}%`,
+                        height: `${box.hPct}%`,
+                      }}
+                    />
+                  ))}
+
+                {currentEls.map((el) => {
+                  const selectedThis = selectedElement?.id === el.id;
+
+                  if (el.type === 'text' || el.type === 'replaceText') {
+                    const fontSize = Math.max(8, (el.fontSizePct / 100) * overlaySize.height);
+                    const textHeight =
+                      el.type === 'replaceText'
+                        ? el.hPct
+                        : Math.max(3, (fontSize / Math.max(1, overlaySize.height)) * 100 * 1.25);
+
+                    return (
+                      <div
+                        key={el.id}
+                        data-editor-control="true"
+                        onPointerDown={(e) => startDrag(e, el)}
+                        style={{
+                          left: `${el.xPct}%`,
+                          top: `${el.yPct}%`,
+                          width: `${el.wPct}%`,
+                          minHeight: `${textHeight}%`,
+                          backgroundColor: el.type === 'replaceText' ? '#ffffff' : 'transparent',
+                          color: el.color,
+                          fontSize,
+                          outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
+                        }}
+                        className="absolute cursor-move overflow-hidden whitespace-pre-wrap px-[1px] font-semibold leading-tight"
+                      >
+                        <div
+                          data-editable-id={el.id}
+                          contentEditable={selectedThis}
+                          suppressContentEditableWarning
+                          onBlur={() => textEditHistory.current.delete(el.id)}
+                          onPointerDown={(e) => {
+                            if (selectedThis) e.stopPropagation();
+                          }}
+                          onInput={(e) => {
+                            if (!textEditHistory.current.has(el.id)) {
+                              pushHistorySnapshot();
+                              textEditHistory.current.add(el.id);
+                            }
+                            const text = e.currentTarget.innerText.replace(/\n{3,}/g, '\n\n');
+                            updateEl(el.id, (currentEl) =>
+                              currentEl.type === 'text' || currentEl.type === 'replaceText'
+                                ? { ...currentEl, text }
+                                : currentEl
+                            );
+                          }}
+                          className="min-h-[1em] outline-none"
+                        >
+                          {el.text}
+                        </div>
+                        {selectedThis && el.type === 'replaceText' && (
+                          <span
+                            data-editor-control="true"
+                            onPointerDown={(e) => startResize(e, el)}
+                            className="absolute bottom-0 right-0 h-4 w-4 cursor-nwse-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (el.type === 'whiteout' || el.type === 'highlight' || el.type === 'rect' || el.type === 'image') {
+                    return (
+                      <div
+                        key={el.id}
+                        data-editor-control="true"
+                        onPointerDown={(e) => startDrag(e, el)}
+                        style={{
+                          left: `${el.xPct}%`,
+                          top: `${el.yPct}%`,
+                          width: `${el.wPct}%`,
+                          height: `${el.hPct}%`,
+                          backgroundColor:
+                            el.type === 'whiteout' ? '#ffffff' : el.type === 'highlight' ? el.color : 'transparent',
+                          opacity: el.type === 'highlight' ? 0.35 : 1,
+                          border:
+                            el.type === 'rect'
+                              ? `2px solid ${el.color}`
+                              : selectedThis
+                                ? '1px solid #e11d48'
+                                : el.type === 'whiteout'
+                                  ? '1px solid rgba(15,23,42,0.08)'
+                                  : 'none',
+                          outline: selectedThis ? '1px solid #e11d48' : 'none',
+                        }}
+                        className="absolute cursor-move"
+                      >
+                        {el.type === 'image' && (
+                          <img src={el.dataUrl} alt="" className="h-full w-full object-fill" draggable={false} />
+                        )}
+                        {selectedThis && (
+                          <span
+                            data-editor-control="true"
+                            onPointerDown={(e) => startResize(e, el)}
+                            className="absolute bottom-0 right-0 h-4 w-4 cursor-nwse-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (el.type === 'pen') {
+                    return (
+                      <svg
+                        key={el.id}
+                        className="pointer-events-none absolute inset-0 h-full w-full"
+                        viewBox="0 0 100 100"
+                        preserveAspectRatio="none"
+                      >
+                        <polyline
+                          points={el.points.map((p) => `${p.xPct},${p.yPct}`).join(' ')}
+                          fill="none"
+                          stroke={el.color}
+                          strokeWidth={0.4}
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                          vectorEffect="non-scaling-stroke"
+                        />
+                      </svg>
+                    );
+                  }
+
+                  return null;
+                })}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       {error && <ErrorNote>{error}</ErrorNote>}

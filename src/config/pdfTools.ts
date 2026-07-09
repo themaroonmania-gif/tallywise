@@ -273,19 +273,20 @@ export const pdfTools: PdfToolDef[] = [
     name: 'Edit PDF',
     group: 'edit',
     iconName: 'PenLine',
-    seoTitle: 'Edit PDF Online Free - Edit Text, Add Images & Mark Up PDFs',
-    seoDescription: 'A free online PDF editor. Edit detected PDF text, delete text, add new text, images, shapes, highlights, and drawings, then download privately in your browser.',
+    seoTitle: 'Edit PDF Online Free - Edit Text, OCR, Images & Markup',
+    seoDescription: 'A free online PDF editor with detected text editing, OCR for scanned pages, delete/replace text, images, shapes, highlights, drawing, and private in-browser export.',
     h1: 'Edit PDF',
-    tagline: 'Edit detected text, delete text, add images, and mark up your PDF.',
+    tagline: 'Edit detected or OCR text, delete text, add images, and mark up your PDF.',
     explainerHtml: `
       ${PRIVACY_NOTE}
       <h3>What you can do</h3>
-      <p>Open any PDF and edit detected text lines, delete text, add new text boxes, insert images, draw freehand, add rectangles and highlights, and place content anywhere on the page. When you are done, download a new PDF with your edits baked in.</p>
+      <p>Open any PDF and edit detected text lines, run OCR on scanned pages, delete text, add new text boxes, insert images, draw freehand, add rectangles and highlights, and place content anywhere on the page. Desktop users get a thumbnail sidebar, zoom controls, and undo/redo; mobile users get the same editing tools in a touch-friendly layout.</p>
       <h3>How text editing works</h3>
-      <p>Tallywise detects the PDF text layer, lets you edit those lines visually, masks the original text area, and writes your replacement text into the exported PDF. Scanned PDFs with an OCR text layer can be edited the same way; image-only scans can still be cleaned up with erase and text tools.</p>
+      <p>Tallywise detects the PDF text layer, lets you edit those lines visually, masks the original text area, and writes your replacement text into the exported PDF. If a page is image-only, use the OCR button to detect readable text first, then click a detected line to replace or delete it.</p>
     `,
     faqs: [
       { question: 'Can I edit the existing text in the PDF?', answer: 'Yes. The editor detects selectable PDF text lines so you can click, edit, replace, or delete them. It preserves the page layout by masking the original text area and writing your replacement text into the final file.' },
+      { question: 'Does it work on scanned PDFs?', answer: 'Yes, use the OCR button on a scanned page to detect text lines first. OCR quality depends on scan clarity, but once text is detected you can replace or delete it visually.' },
       { question: 'Are my edits saved to a server?', answer: 'No. All editing happens in your browser and the finished PDF is generated locally on your device.' },
       { question: 'Can I add my signature?', answer: 'Yes. Use the drawing tool to sign by hand, or use the dedicated Sign PDF tool to draw, type, or upload a signature.' },
     ],
