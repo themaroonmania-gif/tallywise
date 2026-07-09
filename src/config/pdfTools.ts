@@ -135,7 +135,7 @@ export const pdfTools: PdfToolDef[] = [
       { question: 'Can I delete pages here too?', answer: 'Yes. This tool lets you both reorder and remove pages in one place using page thumbnails.' },
     ],
     relatedSlugs: ['merge-pdf', 'remove-pages', 'rotate-pdf'],
-    status: 'soon',
+    status: 'live',
   },
   {
     slug: 'remove-pages',
@@ -273,24 +273,24 @@ export const pdfTools: PdfToolDef[] = [
     name: 'Edit PDF',
     group: 'edit',
     iconName: 'PenLine',
-    seoTitle: 'Edit PDF Online Free - Add Text, Images & Shapes in Your Browser',
-    seoDescription: 'A free online PDF editor. Add text, images, shapes, highlights, and freehand drawing to any PDF, then download. Private and in-browser.',
+    seoTitle: 'Edit PDF Online Free - Edit Text, Add Images & Mark Up PDFs',
+    seoDescription: 'A free online PDF editor. Edit detected PDF text, delete text, add new text, images, shapes, highlights, and drawings, then download privately in your browser.',
     h1: 'Edit PDF',
-    tagline: 'Add text, images, shapes, highlights, and drawings directly onto your PDF.',
+    tagline: 'Edit detected text, delete text, add images, and mark up your PDF.',
     explainerHtml: `
       ${PRIVACY_NOTE}
       <h3>What you can do</h3>
-      <p>Open any PDF and add new text boxes, insert images, draw freehand, add rectangles and highlights, and place your content anywhere on the page. When you are done, download a new PDF with your edits merged in.</p>
-      <h3>A note on editing existing text</h3>
-      <p>Like most browser-based editors, this tool adds a new layer on top of your PDF rather than re-flowing the original typeset text. That means you can cover, annotate, and add to a document freely &mdash; ideal for filling forms, marking up contracts, and adding notes.</p>
+      <p>Open any PDF and edit detected text lines, delete text, add new text boxes, insert images, draw freehand, add rectangles and highlights, and place content anywhere on the page. When you are done, download a new PDF with your edits baked in.</p>
+      <h3>How text editing works</h3>
+      <p>Tallywise detects the PDF text layer, lets you edit those lines visually, masks the original text area, and writes your replacement text into the exported PDF. Scanned PDFs with an OCR text layer can be edited the same way; image-only scans can still be cleaned up with erase and text tools.</p>
     `,
     faqs: [
-      { question: 'Can I edit the existing text in the PDF?', answer: 'You can add new text and cover existing text with boxes or highlights. Directly re-flowing the original typeset text is not possible in any purely in-browser editor, because PDFs store text as fixed positioned glyphs rather than editable paragraphs.' },
+      { question: 'Can I edit the existing text in the PDF?', answer: 'Yes. The editor detects selectable PDF text lines so you can click, edit, replace, or delete them. It preserves the page layout by masking the original text area and writing your replacement text into the final file.' },
       { question: 'Are my edits saved to a server?', answer: 'No. All editing happens in your browser and the finished PDF is generated locally on your device.' },
       { question: 'Can I add my signature?', answer: 'Yes. Use the drawing tool to sign by hand, or use the dedicated Sign PDF tool to draw, type, or upload a signature.' },
     ],
     relatedSlugs: ['sign-pdf', 'watermark-pdf', 'page-numbers'],
-    status: 'soon',
+    status: 'live',
   },
   {
     slug: 'sign-pdf',
@@ -311,7 +311,7 @@ export const pdfTools: PdfToolDef[] = [
       { question: 'Is my signature stored anywhere?', answer: 'No. Your signature and document stay in your browser and are never uploaded.' },
     ],
     relatedSlugs: ['edit-pdf', 'watermark-pdf', 'page-numbers'],
-    status: 'soon',
+    status: 'live',
   },
   {
     slug: 'watermark-pdf',

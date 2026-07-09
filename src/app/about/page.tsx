@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'About Us | Tallywise.co',
-  description: 'Learn about Tallywise.co, our mission to build fast, accurate, and accessible online calculators, and how we help users make data-driven decisions.',
+  description: 'Learn about Tallywise.co, our mission to build fast, private, accessible calculators and PDF tools that run in your browser.',
 };
 
 export default function AboutPage() {
@@ -23,26 +23,26 @@ export default function AboutPage() {
                 About Tallywise
               </h1>
               <p className="text-slate-500 text-md font-medium leading-relaxed">
-                Tallywise.co was founded with a singular, clear goal: to build the web's fastest, most accurate, and zero-friction suite of interactive calculations. 
+                Tallywise.co builds fast, private, zero-friction browser tools for the work people do every day: calculate numbers, clean up PDFs, convert files, and get on with life.
               </p>
             </div>
 
             <div className="border-t border-slate-100 pt-8 space-y-6 text-slate-600 font-medium leading-relaxed">
               <h2 className="text-xl font-bold text-slate-800">Why Tallywise?</h2>
               <p>
-                Most online calculators are cluttered with heavy, slow script files, flashing ad layouts, complex registration barriers, or inaccurate formulas. We believe calculations should be instantaneous, mobile-first, and highly reliable.
+                Most online utility sites are cluttered with heavy scripts, upload gates, confusing paywalls, and noisy workflows. We believe everyday tools should be instant, mobile-first, and clear enough to trust.
               </p>
               <p>
-                Our team calibrates every single tool against verified mathematical standards, federal/state tax brackets, obstetric guidelines, and athletic health models. Whether you are checking your paycheck withholdings, estimating your mortgage amortization, curving academic grades, or tracking your body fat index, we compute your results in under a millisecond directly inside your browser.
+                Our calculators are calibrated against verified formulas and practical reference standards. Our PDF tools run locally in your browser so documents can be merged, compressed, converted, signed, or edited without uploading private files to a server.
               </p>
 
               <h2 className="text-xl font-bold text-slate-800">Our Core Principles</h2>
               <ul className="list-disc pl-6 space-y-3">
                 <li>
-                  <strong className="text-slate-800">Instant Execution:</strong> Zero server dependencies per request. Calculations compute instantly client-side using validated React states.
+                  <strong className="text-slate-800">Instant Execution:</strong> Tools run directly in the browser wherever possible, with no waiting on an upload queue.
                 </li>
                 <li>
-                  <strong className="text-slate-800">Privacy First:</strong> Your inputs are processed locally on your device. We do not store, track, or sell your private calculation data.
+                  <strong className="text-slate-800">Privacy First:</strong> Your numbers and PDF files are processed locally on your device. We do not store or sell private tool inputs.
                 </li>
                 <li>
                   <strong className="text-slate-800">Accessibility:</strong> Fully responsive CSS layout designs that scale flawlessly to fit smartphones, tablets, and desktop displays alike.

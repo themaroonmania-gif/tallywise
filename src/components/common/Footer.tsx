@@ -17,7 +17,7 @@ export function Footer() {
               Tally<span className="text-indigo-650 bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">wise</span>
             </span>
             <p className="text-slate-400 leading-relaxed font-medium">
-              Free, private, in-browser tools for everyday life — calculators for finance, health, and school, plus a full suite of PDF tools. No accounts, no uploads, zero friction.
+              Free, private, in-browser tools for everyday life: calculators for finance, health, and school, plus a full suite of PDF tools. No accounts, no uploads, zero friction.
             </p>
           </div>
 
@@ -60,7 +60,7 @@ export function Footer() {
                 <Link href="/pdf/compress-pdf" className="hover:text-slate-800 transition-colors">Compress PDF</Link>
               </li>
               <li>
-                <Link href="/pdf/pdf-to-jpg" className="hover:text-slate-800 transition-colors">PDF to JPG</Link>
+                <Link href="/pdf/edit-pdf" className="hover:text-slate-800 transition-colors">Edit PDF</Link>
               </li>
             </ul>
           </div>

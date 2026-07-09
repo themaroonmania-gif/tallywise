@@ -261,7 +261,7 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
                           </div>
                           <div className="text-[10px] font-bold text-indigo-650 mt-3 flex items-center justify-between">
                             <span>Compute</span>
-                            <span>â†’</span>
+                            <span>-&gt;</span>
                           </div>
                         </Link>
                       ))}

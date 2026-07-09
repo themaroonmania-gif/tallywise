@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_TITLE = "Tallywise — Free Online Calculators & PDF Tools";
+const SITE_TITLE = "Tallywise - Free Online Calculators & PDF Tools";
 const SITE_DESC =
   "Free, private, in-browser tools: calculators for finance, health, and school, plus a full suite of PDF tools (merge, split, compress, convert, edit). No signup, no uploads, no paywalls.";
 

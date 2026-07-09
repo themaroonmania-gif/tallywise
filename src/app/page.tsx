@@ -42,24 +42,24 @@ export default function Home() {
               <section className="bg-white border-b border-slate-100 py-16 md:py-24 rounded-3xl">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-750 font-bold text-xs">
-                    ⚡ High-speed mathematical modeling
+                    Private calculators and PDF tools
                   </div>
 
                   <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-850 max-w-3xl mx-auto leading-[1.1]">
-                    Solve complex sums in{' '}
+                    Fast everyday tools that work{' '}
                     <span className="bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">
-                      milliseconds
+                      in your browser
                     </span>
                   </h1>
 
                   <p className="text-slate-500 text-md md:text-lg max-w-xl mx-auto font-medium">
-                    Free, private, in-browser tools — accurate calculators for finance, health, and school, plus a full suite of PDF tools. No accounts, no paywalls, instant results.
+                    Free calculators for finance, health, school, and conversions, plus private PDF tools to merge, compress, convert, edit, and sign documents. No accounts, no uploads, no paywalls.
                   </p>
 
                   <div className="max-w-md mx-auto relative pt-4">
                     <input
                       type="text"
-                      placeholder="Search 60+ calculators (e.g. paycheck, gpa)..."
+                      placeholder="Search calculators (e.g. paycheck, GPA)..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="w-full px-5 py-3.5 pl-12 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-medium text-slate-800 shadow-sm text-sm"
@@ -93,7 +93,7 @@ export default function Home() {
                       New: <span className="text-rose-600">Free PDF Tools</span>
                     </h2>
                     <p className="text-xs md:text-sm font-medium text-slate-500">
-                      Merge, split, compress, convert, edit &amp; sign PDFs — 100% in your browser, files never uploaded.
+                      Merge, split, compress, convert, edit, and sign PDFs in your browser. Files never upload.
                     </p>
                   </div>
                 </div>
