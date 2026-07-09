@@ -52,15 +52,27 @@ export function Header() {
             >
               Conversion
             </Link>
+            <Link
+              href="/pdf"
+              className="inline-flex items-center gap-1 rounded-lg bg-rose-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-rose-600 border border-rose-100 hover:bg-rose-100 transition-colors"
+            >
+              PDF Tools
+            </Link>
           </nav>
 
-          {/* Mobile Menu Icon (Simple indicator or standard layout helper) */}
-          <div className="flex md:hidden items-center gap-3">
+          {/* Mobile quick links */}
+          <div className="flex md:hidden items-center gap-2">
             <Link
               href="/finance"
               className="text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1.5 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100"
             >
               Calcs
+            </Link>
+            <Link
+              href="/pdf"
+              className="text-[10px] font-extrabold uppercase tracking-wide px-2.5 py-1.5 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg hover:bg-rose-100"
+            >
+              PDF
             </Link>
           </div>
         </div>
