@@ -10,6 +10,9 @@ import { PdfToJpg, PdfToPng } from './tools/PdfToImages';
 import { CompressPdf } from './tools/CompressPdf';
 import { WatermarkPdf } from './tools/WatermarkPdf';
 import { PageNumbers } from './tools/PageNumbers';
+import { OrganizePdf } from './tools/OrganizePdf';
+import { SignPdf } from './tools/SignPdf';
+import { EditPdf } from './tools/EditPdf';
 
 // Maps a PDF tool slug to its interactive component. Tools not yet listed here
 // fall back to the ComingSoon panel, so the whole catalog can be published for
@@ -26,6 +29,9 @@ export const pdfToolComponents: Record<string, React.ComponentType> = {
   'compress-pdf': CompressPdf,
   'watermark-pdf': WatermarkPdf,
   'page-numbers': PageNumbers,
+  'organize-pdf': OrganizePdf,
+  'sign-pdf': SignPdf,
+  'edit-pdf': EditPdf,
 };
 
 export function ComingSoonPdfTool({ name }: { name: string }) {
