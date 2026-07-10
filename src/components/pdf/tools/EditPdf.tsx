@@ -95,6 +95,10 @@ type El =
       text: string;
       fontSizePct: number;
       color: string;
+      /** Sampled page-background color used to cover the original text,
+       *  so an edit blends into a colored/scanned page instead of leaving
+       *  a white rectangle. Falls back to white until sampling resolves. */
+      bgColor: string;
     }
   | {
       id: string;
@@ -317,18 +321,22 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
 }
 
 const DEFAULT_TEXT_COLOR = '#111827';
+const DEFAULT_BG_COLOR = '#ffffff';
 
 /**
- * Approximates the original ink color of a detected text line by sampling
- * the darkest pixel inside its bounding box on the rendered page image —
- * so replacing text keeps looking like the source instead of always
- * turning near-black, regardless of whether it came from the PDF's text
- * layer or from OCR on a scanned page.
+ * Samples a detected text line's region on the rendered page image to recover
+ * two colors, so an edit blends into the page instead of looking pasted on:
+ *   - `ink`: the darkest pixel in the box (approximates the text color)
+ *   - `background`: the most common color in the box (approximates the page
+ *     background behind the text, since background pixels outnumber glyph
+ *     pixels in a tight line box)
+ * Works the same whether the line came from the PDF text layer or from OCR.
  */
-function sampleTextColor(
+function sampleRegionColors(
   imageUrl: string,
   box: { xPct: number; yPct: number; wPct: number; hPct: number }
-): Promise<string> {
+): Promise<{ ink: string; background: string }> {
+  const fallback = { ink: DEFAULT_TEXT_COLOR, background: DEFAULT_BG_COLOR };
   return new Promise((resolve) => {
     const image = new Image();
     image.onload = () => {
@@ -337,7 +345,7 @@ function sampleTextColor(
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        if (!ctx) return resolve(DEFAULT_TEXT_COLOR);
+        if (!ctx) return resolve(fallback);
 
         ctx.drawImage(image, 0, 0);
         const x = clamp(Math.round((box.xPct / 100) * canvas.width), 0, canvas.width - 1);
@@ -346,24 +354,37 @@ function sampleTextColor(
         const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
         const { data } = ctx.getImageData(x, y, w, h);
 
-        let bestR = 17, bestG = 24, bestB = 39, bestLuminance = Infinity;
+        let inkR = 17, inkG = 24, inkB = 39, inkLum = Infinity;
+        const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
+
         for (let i = 0; i < data.length; i += 4) {
-          const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
           if (a < 200) continue;
+
           const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-          if (luminance < bestLuminance) {
-            bestLuminance = luminance;
-            bestR = r; bestG = g; bestB = b;
-          }
+          if (luminance < inkLum) { inkLum = luminance; inkR = r; inkG = g; inkB = b; }
+
+          // Quantize to 16 levels/channel so anti-aliasing noise collapses into
+          // the same bucket, letting the true background win by pixel count.
+          const key = `${r >> 4},${g >> 4},${b >> 4}`;
+          const bucket = buckets.get(key);
+          if (bucket) bucket.count++;
+          else buckets.set(key, { count: 1, r, g, b });
         }
 
+        let bg = { count: 0, r: 255, g: 255, b: 255 };
+        for (const bucket of buckets.values()) if (bucket.count > bg.count) bg = bucket;
+
         const toHex = (n: number) => n.toString(16).padStart(2, '0');
-        resolve(`#${toHex(bestR)}${toHex(bestG)}${toHex(bestB)}`);
+        resolve({
+          ink: `#${toHex(inkR)}${toHex(inkG)}${toHex(inkB)}`,
+          background: `#${toHex(bg.r)}${toHex(bg.g)}${toHex(bg.b)}`,
+        });
       } catch {
-        resolve(DEFAULT_TEXT_COLOR);
+        resolve(fallback);
       }
     };
-    image.onerror = () => resolve(DEFAULT_TEXT_COLOR);
+    image.onerror = () => resolve(fallback);
     image.src = imageUrl;
   });
 }
@@ -500,7 +521,7 @@ export function EditPdf() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const drafting = useRef<{ id: string; startX: number; startY: number } | null>(null);
   const dragging = useRef<{
-    id: string; type: El['type']; offX: number; offY: number;
+    id: string; type: El['type']; canMove: boolean; offX: number; offY: number;
     startClientX: number; startClientY: number; moved: boolean;
   } | null>(null);
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
@@ -685,12 +706,14 @@ export function EditPdf() {
     if (existing) {
       setSelected({ kind: 'element', id: existing.id });
       setFocusElementId(existing.id);
-      setTool('select');
+      // Stay in the text-editing tool so you can keep clicking line after
+      // line to edit — don't drop into Move mode after each edit.
+      setTool('editText');
       return;
     }
 
     const id = uid();
-    // Placeholder color while sampling, so the box appears instantly instead
+    // Placeholder colors while sampling, so the box appears instantly instead
     // of waiting on the async color sample before selection/focus can happen.
     commitEls((prev) => [
       ...prev,
@@ -706,18 +729,20 @@ export function EditPdf() {
         text: box.text,
         fontSizePct: box.fontSizePct,
         color: DEFAULT_TEXT_COLOR,
+        bgColor: DEFAULT_BG_COLOR,
       },
     ]);
     setSelected({ kind: 'element', id });
     setFocusElementId(id);
-    setTool('select');
+    setTool('editText');
 
-    // Match the original text's color instead of always defaulting to
-    // near-black, so editing a line doesn't change how it looks.
+    // Recover the original ink + page-background colors so the edit blends in
+    // (keeps the text's color, covers the old text with the real background
+    // instead of a white box) rather than looking obviously pasted on.
     const pageUrl = page?.url;
     if (pageUrl) {
-      sampleTextColor(pageUrl, box).then((sampledColor) => {
-        updateEl(id, (el) => (el.type === 'replaceText' ? { ...el, color: sampledColor } : el));
+      sampleRegionColors(pageUrl, box).then(({ ink, background }) => {
+        updateEl(id, (el) => (el.type === 'replaceText' ? { ...el, color: ink, bgColor: background } : el));
       });
     }
   };
@@ -795,6 +820,8 @@ export function EditPdf() {
 
     if (dragging.current) {
       const dr = dragging.current;
+      // In the text tool a text box is click-to-edit only, never dragged.
+      if (!dr.canMove) return;
       // Require a small amount of real movement before treating this as a
       // drag, so a plain click/tap to select an element never nudges it.
       if (!dr.moved) {
@@ -831,14 +858,19 @@ export function EditPdf() {
   };
 
   const startDrag = (e: React.PointerEvent, el: El) => {
-    if (tool !== 'select' || el.type === 'pen' || !elementHasBox(el)) return;
+    if (el.type === 'pen' || !elementHasBox(el)) return;
+    const isTextEl = el.type === 'text' || el.type === 'replaceText';
+    const canMove = tool === 'select';
+    // Text boxes stay clickable-to-edit in the text tool (just not draggable);
+    // other elements are only interactive in Move mode.
+    if (!canMove && !isTextEl) return;
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
     // History is only recorded once the pointer actually moves (see
     // onPointerMove), so a plain click-to-select doesn't pollute undo.
     dragging.current = {
-      id: el.id, type: el.type, offX: xPct - el.xPct, offY: yPct - el.yPct,
+      id: el.id, type: el.type, canMove, offX: xPct - el.xPct, offY: yPct - el.yPct,
       startClientX: e.clientX, startClientY: e.clientY, moved: false,
     };
     overlayRef.current?.setPointerCapture(e.pointerId);
@@ -1003,12 +1035,15 @@ export function EditPdf() {
           const y = H - (el.yPct / 100) * H - h;
           const padX = W * 0.002;
           const padY = H * 0.0015;
+          // Cover the original text with the sampled page background (falling
+          // back to white) so the edit blends into colored/scanned pages.
+          const maskColor = el.type === 'replaceText' ? hexToRgb(el.bgColor) : rgb(1, 1, 1);
           pdfPage.drawRectangle({
             x: x - padX,
             y: y - padY,
             width: w + padX * 2,
             height: h + padY * 2,
-            color: rgb(1, 1, 1),
+            color: maskColor,
           });
 
           if (el.type === 'replaceText') {
@@ -1476,12 +1511,12 @@ export function EditPdf() {
                           top: `${el.yPct}%`,
                           width: `${el.wPct}%`,
                           minHeight: `${textHeight}%`,
-                          backgroundColor: el.type === 'replaceText' ? '#ffffff' : 'transparent',
+                          backgroundColor: el.type === 'replaceText' ? el.bgColor : 'transparent',
                           color: el.color,
                           fontSize,
                           outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
                         }}
-                        className="absolute cursor-move overflow-hidden whitespace-pre-wrap px-[1px] font-semibold leading-tight"
+                        className="absolute cursor-text overflow-hidden whitespace-pre-wrap px-[1px] font-normal leading-tight"
                       >
                         <div
                           data-editable-id={el.id}
