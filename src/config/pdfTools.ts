@@ -266,6 +266,46 @@ export const pdfTools: PdfToolDef[] = [
     relatedSlugs: ['pdf-to-jpg', 'merge-pdf', 'compress-pdf'],
     status: 'live',
   },
+  {
+    slug: 'pdf-to-text',
+    name: 'PDF to Text',
+    group: 'convert',
+    iconName: 'FileText',
+    seoTitle: 'PDF to Text Online Free - Extract Text From a PDF',
+    seoDescription: 'Pull the plain text out of a PDF and download it as a .txt file, for free. Runs entirely in your browser.',
+    h1: 'Convert PDF to Text',
+    tagline: 'Extract the plain text content of a PDF into a downloadable .txt file.',
+    explainerHtml: `
+      ${PRIVACY_NOTE}
+      <h3>How to convert PDF to text</h3>
+      <p>Upload your PDF and Tallywise reads the text layer from every page, then bundles it into a single .txt file you can download or paste elsewhere.</p>
+    `,
+    faqs: [
+      { question: 'Does this work on scanned PDFs?', answer: 'Only if the PDF already has a text layer (for example, one created from OCR). Purely scanned images with no embedded text will produce empty output.' },
+    ],
+    relatedSlugs: ['text-to-pdf', 'pdf-to-jpg', 'edit-pdf'],
+    status: 'live',
+  },
+  {
+    slug: 'text-to-pdf',
+    name: 'Text to PDF',
+    group: 'convert',
+    iconName: 'FileText',
+    seoTitle: 'Text to PDF Online Free - Turn Plain Text Into a PDF',
+    seoDescription: 'Paste or type text and turn it into a clean, downloadable PDF document for free. Private, in-browser.',
+    h1: 'Convert Text to PDF',
+    tagline: 'Type or paste text and turn it into a nicely formatted PDF.',
+    explainerHtml: `
+      ${PRIVACY_NOTE}
+      <h3>How to convert text to PDF</h3>
+      <p>Paste or type your text, and Tallywise lays it out on US Letter-sized pages with sensible margins, wrapping and paginating automatically.</p>
+    `,
+    faqs: [
+      { question: 'Can I control fonts or formatting?', answer: 'This tool focuses on quick, clean plain-text documents with consistent margins and line spacing rather than rich formatting.' },
+    ],
+    relatedSlugs: ['pdf-to-text', 'edit-pdf', 'merge-pdf'],
+    status: 'live',
+  },
 
   // ---------- EDIT & SIGN ----------
   {
