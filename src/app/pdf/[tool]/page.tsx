@@ -1,6 +1,7 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { ArrowRight, ChevronDown, FileText, Home, ShieldCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { pdfTools, getPdfTool, PDF_GROUPS, PdfToolDef } from '@/config/pdfTools';
 import { Header } from '@/components/common/Header';
@@ -12,8 +13,16 @@ interface PdfToolPageProps {
   params: Promise<{ tool: string }>;
 }
 
+const groupBadge: Record<string, string> = {
+  organize: 'bg-[#4338ca] text-white',
+  optimize: 'bg-[#0f766e] text-white',
+  convert: 'bg-[#b77a22] text-white',
+  edit: 'bg-[#be123c] text-white',
+  security: 'bg-[#0f766e] text-white',
+};
+
 export function generateStaticParams() {
-  return pdfTools.map((t) => ({ tool: t.slug }));
+  return pdfTools.map((tool) => ({ tool: tool.slug }));
 }
 
 export async function generateMetadata({ params }: PdfToolPageProps): Promise<Metadata> {
@@ -49,7 +58,7 @@ export default async function PdfToolPage({ params }: PdfToolPageProps) {
 
   const related = def.relatedSlugs
     .map((slug) => getPdfTool(slug))
-    .filter((t): t is PdfToolDef => !!t);
+    .filter((item): item is PdfToolDef => !!item);
 
   const faqSchema =
     def.faqs.length > 0
@@ -96,66 +105,75 @@ export default async function PdfToolPage({ params }: PdfToolPageProps) {
 
       <Header />
 
-      <main className="flex-1 bg-slate-50 py-8">
-        <div className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8">
+      <main className="site-page py-8 md:py-12">
+        <div className="site-container">
           <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
             <aside className="hidden 2xl:block">
-              <AdSlot id="pdf-left-ad" type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id="pdf-left-ad" type="sidebar" className="my-0" />
             </aside>
 
             <div className="min-w-0">
-              <div className="mx-auto max-w-4xl space-y-6">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                  <Link href="/" className="hover:text-slate-600 transition-colors">Home</Link>
+              <div className="mx-auto max-w-5xl space-y-7">
+                <nav className="flex flex-wrap items-center gap-2 text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#8f8170]">
+                  <Link href="/" className="inline-flex items-center gap-1 transition hover:text-[#241c17]">
+                    <Home className="h-3.5 w-3.5" />
+                    Home
+                  </Link>
                   <span>/</span>
-                  <Link href="/pdf" className="hover:text-slate-600 transition-colors">PDF Tools</Link>
+                  <Link href="/pdf" className="transition hover:text-[#241c17]">PDF Studio</Link>
                   <span>/</span>
-                  <span className="text-slate-550 font-bold">{def.name}</span>
-                </div>
+                  <span className="text-[#241c17]">{def.name}</span>
+                </nav>
 
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-rose-600 border border-rose-100">
-                    {PDF_GROUPS[def.group].name} · 100% Free
+                <section className="paper-card overflow-hidden rounded-[2rem] p-6 md:p-9">
+                  <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+                    <div>
+                      <span className={`inline-flex rounded-full px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] ${groupBadge[def.group] ?? groupBadge.edit}`}>
+                        {PDF_GROUPS[def.group].name} - free
+                      </span>
+                      <h1 className="font-display mt-5 max-w-4xl text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
+                        {def.h1}
+                      </h1>
+                      <p className="mt-5 max-w-3xl text-base font-semibold leading-8 text-[#6f6459]">{def.tagline}</p>
+                    </div>
+                    <div className="rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 p-4 text-sm font-semibold leading-6 text-[#6f6459] lg:max-w-xs">
+                      <ShieldCheck className="mb-3 h-5 w-5 text-[#0f766e]" />
+                      Files are processed in the browser whenever possible. No account needed.
+                    </div>
                   </div>
-                  <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight leading-none">
-                    {def.h1}
-                  </h1>
-                  <p className="text-sm font-medium text-slate-450">{def.tagline}</p>
-                </div>
+                </section>
 
                 <div className="w-full">
                   {ToolComponent ? <ToolComponent /> : <ComingSoonPdfTool name={def.name} />}
                 </div>
 
-                <article className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 space-y-6 shadow-sm">
-                  <div className="prose prose-slate max-w-none prose-sm leading-relaxed prose-headings:font-extrabold prose-headings:text-slate-800 prose-h3:text-sm prose-h3:uppercase prose-h3:tracking-wide prose-h3:text-slate-400 prose-ul:list-disc prose-ul:pl-5 text-slate-600 font-medium">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 border-b border-slate-100 pb-3">
-                      About the {def.name} tool
+                <article className="paper-card rounded-[1.75rem] p-6 md:p-8">
+                  <div className="content-prose max-w-none text-sm font-semibold">
+                    <h2 className="font-display border-b border-[#dacbb3] pb-4 text-3xl font-black tracking-tight text-[#241c17]">
+                      About this tool
                     </h2>
                     <div dangerouslySetInnerHTML={{ __html: def.explainerHtml }} className="space-y-4" />
                   </div>
                 </article>
 
                 {def.faqs.length > 0 && (
-                  <section className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 border-b border-slate-100 pb-3">
-                      Frequently Asked Questions
+                  <section className="paper-card rounded-[1.75rem] p-6 md:p-8">
+                    <h2 className="font-display border-b border-[#dacbb3] pb-4 text-3xl font-black tracking-tight text-[#241c17]">
+                      Frequently asked questions
                     </h2>
-                    <div className="space-y-3">
+                    <div className="mt-5 space-y-3">
                       {def.faqs.map((faq, idx) => (
                         <details
                           key={idx}
-                          className="group border border-slate-100 rounded-xl bg-slate-50/50 p-4 hover:border-slate-200 transition-all [&_summary::-webkit-details-marker]:hidden"
+                          className="group rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/72 p-4 transition hover:border-[#b77a22]/40 [&_summary::-webkit-details-marker]:hidden"
                         >
-                          <summary className="flex cursor-pointer items-center justify-between gap-1.5 text-sm font-bold text-slate-700 select-none">
+                          <summary className="flex cursor-pointer select-none items-center justify-between gap-3 text-sm font-black text-[#241c17]">
                             <span>{faq.question}</span>
-                            <span className="ml-1.5 shrink-0 rounded-full bg-white p-1 text-slate-400 group-open:rotate-180 transition-transform shadow-sm border border-slate-100">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-3.5 w-3.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                              </svg>
+                            <span className="shrink-0 rounded-full border border-[#dacbb3] bg-white p-1.5 text-[#8a5417] transition group-open:rotate-180">
+                              <ChevronDown className="h-3.5 w-3.5" />
                             </span>
                           </summary>
-                          <p className="mt-3 text-xs leading-relaxed font-semibold text-slate-550 border-t border-slate-100 pt-3">
+                          <p className="mt-3 border-t border-[#dacbb3] pt-3 text-sm font-semibold leading-7 text-[#6f6459]">
                             {faq.answer}
                           </p>
                         </details>
@@ -166,26 +184,31 @@ export default async function PdfToolPage({ params }: PdfToolPageProps) {
 
                 {related.length > 0 && (
                   <section className="space-y-4">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Related PDF tools</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                      {related.map((rt) => (
+                    <div>
+                      <p className="eyebrow">Related</p>
+                      <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#241c17]">
+                        Keep working with these PDF tools
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+                      {related.map((relatedTool) => (
                         <Link
-                          key={rt.slug}
-                          href={`/pdf/${rt.slug}`}
-                          className="bg-white rounded-xl p-4 border border-slate-100 hover:border-rose-500/20 hover:shadow-md transition-all flex flex-col justify-between"
+                          key={relatedTool.slug}
+                          href={`/pdf/${relatedTool.slug}`}
+                          className="tool-card group flex min-h-[165px] flex-col justify-between rounded-[1.35rem] p-5"
                         >
                           <div>
-                            <span className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500 text-white mb-2 inline-block">
+                            <span className="mb-3 inline-flex rounded-full bg-[#be123c] px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em] text-white">
                               PDF
                             </span>
-                            <h3 className="text-xs font-bold text-slate-750">{rt.name}</h3>
-                            <p className="text-[10px] text-slate-400 line-clamp-2 mt-1 leading-normal font-medium">
-                              {rt.tagline}
+                            <h3 className="font-display text-xl font-black text-[#241c17]">{relatedTool.name}</h3>
+                            <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-[#6f6459]">
+                              {relatedTool.tagline}
                             </p>
                           </div>
-                          <div className="text-[10px] font-bold text-rose-600 mt-3 flex items-center justify-between">
+                          <div className="mt-4 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
                             <span>Open tool</span>
-                            <span>→</span>
+                            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                           </div>
                         </Link>
                       ))}
@@ -196,7 +219,7 @@ export default async function PdfToolPage({ params }: PdfToolPageProps) {
             </div>
 
             <aside className="hidden 2xl:block">
-              <AdSlot id="pdf-right-ad" type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id="pdf-right-ad" type="sidebar" className="my-0" />
             </aside>
           </div>
         </div>

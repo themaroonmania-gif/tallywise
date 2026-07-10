@@ -10,20 +10,20 @@ interface CalculatorShellProps {
 
 export function CalculatorShell({ title, inputs, results }: CalculatorShellProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+    <div className="paper-card rounded-[1.75rem] p-4 md:p-7">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
         <div className="md:col-span-6 space-y-6">
-          <h2 className="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3">
+          <h2 className="font-display border-b border-[#dacbb3] pb-3 text-2xl font-black tracking-tight text-[#241c17]">
             {title ?? 'Enter Values'}
           </h2>
           {inputs}
         </div>
 
         <div className="md:col-span-6 flex flex-col justify-between">
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h2 className="text-xl font-bold text-slate-800">Result</h2>
-              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-50 text-teal-600 border border-teal-200">
+          <div className="rounded-[1.5rem] border border-[#dacbb3] bg-[#fbf4e6] p-5 shadow-inner shadow-[#3b2a16]/5 md:p-6 space-y-6">
+            <div className="flex items-center justify-between border-b border-[#dacbb3] pb-3">
+              <h2 className="font-display text-2xl font-black text-[#241c17]">Result</h2>
+              <span className="rounded-full border border-[#0f766e]/20 bg-[#0f766e]/10 px-2.5 py-1 text-[0.62rem] font-black uppercase tracking-[0.16em] text-[#0f766e]">
                 Live
               </span>
             </div>
@@ -42,17 +42,17 @@ export function ShellInput({
 }: React.InputHTMLAttributes<HTMLInputElement> & { label: string; suffix?: string }) {
   return (
     <div>
-      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+      <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#6f6459]">
         {label}
       </label>
       <div className="relative">
         <input
           type="number"
           {...props}
-          className="w-full pl-4 pr-12 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
+          className="soft-input w-full rounded-2xl px-4 py-3 pr-12 font-bold transition hover:border-[#b77a22]/40"
         />
         {suffix && (
-          <span className="absolute right-4 top-3 text-slate-400 font-medium text-sm">
+          <span className="absolute right-4 top-3.5 text-sm font-bold text-[#9a8c7a]">
             {suffix}
           </span>
         )}
@@ -68,12 +68,12 @@ export function ShellSelect({
 }: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) {
   return (
     <div>
-      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+      <label className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-[#6f6459]">
         {label}
       </label>
       <select
         {...props}
-        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-semibold text-slate-800 bg-white transition-all hover:border-slate-300"
+        className="soft-input w-full rounded-2xl px-4 py-3 font-bold transition hover:border-[#b77a22]/40"
       >
         {children}
       </select>
@@ -82,11 +82,11 @@ export function ShellSelect({
 }
 
 const RESULT_CARD_COLORS: Record<string, string> = {
-  teal: 'bg-teal-600 shadow-teal-600/10',
-  emerald: 'bg-emerald-600 shadow-emerald-600/10',
-  indigo: 'bg-indigo-600 shadow-indigo-600/10',
-  rose: 'bg-rose-600 shadow-rose-600/10',
-  amber: 'bg-amber-600 shadow-amber-600/10',
+  teal: 'bg-[#0f766e] shadow-[#0f766e]/15',
+  emerald: 'bg-[#0f766e] shadow-[#0f766e]/15',
+  indigo: 'bg-[#4338ca] shadow-[#4338ca]/15',
+  rose: 'bg-[#be123c] shadow-[#be123c]/15',
+  amber: 'bg-[#b77a22] shadow-[#b77a22]/15',
 };
 
 export function ResultCard({
@@ -100,11 +100,11 @@ export function ResultCard({
 }) {
   const colorClass = RESULT_CARD_COLORS[color] ?? RESULT_CARD_COLORS.teal;
   return (
-    <div className={`${colorClass} text-white rounded-xl p-6 text-center shadow-md`}>
-      <span className="text-xs font-bold uppercase tracking-wider opacity-85 block mb-1">
+    <div className={`${colorClass} rounded-[1.35rem] p-6 text-center text-white shadow-xl`}>
+      <span className="mb-1 block text-xs font-black uppercase tracking-[0.16em] opacity-85">
         {label}
       </span>
-      <div className="text-3xl font-extrabold tracking-tight break-all">{value}</div>
+      <div className="font-display break-all text-4xl font-black tracking-tight">{value}</div>
     </div>
   );
 }

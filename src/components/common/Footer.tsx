@@ -2,103 +2,91 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-slate-100 bg-slate-50 py-12 text-slate-500 text-xs">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-8">
-          
-          {/* Logo and Pitch */}
-          <div className="space-y-4">
-            <span className="font-extrabold text-sm tracking-tight text-slate-800">
-              Tally<span className="text-indigo-650 bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">wise</span>
-            </span>
-            <p className="text-slate-400 leading-relaxed font-medium">
-              Free, private, in-browser tools for everyday life: calculators for finance, health, and school, plus a full suite of PDF tools. No accounts, no uploads, zero friction.
-            </p>
+    <footer className="mt-auto border-t border-[#dacbb3] bg-[#1b2a2f] text-[#f6efe1]">
+      <div className="site-container py-12 md:py-16">
+        <div className="grid gap-8 lg:grid-cols-[1.25fr_0.85fr_0.85fr_0.85fr]">
+          <div className="space-y-5">
+            <div>
+              <p className="font-display text-3xl font-black tracking-tight">Tallywise</p>
+              <p className="mt-2 max-w-md text-sm font-semibold leading-7 text-[#d8cbb7]">
+                Private browser tools for math, documents, money, school, and everyday admin. Built to be fast,
+                legible, and boringly dependable.
+              </p>
+            </div>
+
+            <div className="grid max-w-lg gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <ShieldCheck className="mb-2 h-5 w-5 text-[#f2c879]" />
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-white">Private-first</p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-[#d8cbb7]">
+                  PDF work happens locally in your browser whenever possible.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <Zap className="mb-2 h-5 w-5 text-[#f2c879]" />
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-white">Fast by design</p>
+                <p className="mt-1 text-xs font-semibold leading-5 text-[#d8cbb7]">
+                  No account gates, no fake loading screens, no unnecessary steps.
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Categories */}
           <div>
-            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-4">Calculators</h4>
-            <ul className="space-y-2 font-medium">
-              <li>
-                <Link href="/finance" className="hover:text-slate-800 transition-colors">Finance Calculators</Link>
-              </li>
-              <li>
-                <Link href="/health" className="hover:text-slate-800 transition-colors">Health & Fitness</Link>
-              </li>
-              <li>
-                <Link href="/school" className="hover:text-slate-800 transition-colors">Academic Grading</Link>
-              </li>
-              <li>
-                <Link href="/everyday" className="hover:text-slate-800 transition-colors">Everyday Utilities</Link>
-              </li>
-              <li>
-                <Link href="/conversion" className="hover:text-slate-800 transition-colors">Unit Conversion</Link>
-              </li>
+            <h4 className="mb-4 text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#f2c879]">
+              Calculators
+            </h4>
+            <ul className="space-y-2.5 text-sm font-semibold text-[#d8cbb7]">
+              <li><Link href="/finance" className="transition hover:text-white">Finance calculators</Link></li>
+              <li><Link href="/health" className="transition hover:text-white">Health and fitness</Link></li>
+              <li><Link href="/school" className="transition hover:text-white">School and grades</Link></li>
+              <li><Link href="/everyday" className="transition hover:text-white">Everyday utilities</Link></li>
+              <li><Link href="/conversion" className="transition hover:text-white">Unit conversion</Link></li>
             </ul>
           </div>
 
-          {/* PDF Tools */}
           <div>
-            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-4">PDF Tools</h4>
-            <ul className="space-y-2 font-medium">
-              <li>
-                <Link href="/pdf" className="hover:text-slate-800 transition-colors">All PDF Tools</Link>
-              </li>
-              <li>
-                <Link href="/pdf/merge-pdf" className="hover:text-slate-800 transition-colors">Merge PDF</Link>
-              </li>
-              <li>
-                <Link href="/pdf/split-pdf" className="hover:text-slate-800 transition-colors">Split PDF</Link>
-              </li>
-              <li>
-                <Link href="/pdf/compress-pdf" className="hover:text-slate-800 transition-colors">Compress PDF</Link>
-              </li>
-              <li>
-                <Link href="/pdf/edit-pdf" className="hover:text-slate-800 transition-colors">Edit PDF</Link>
-              </li>
+            <h4 className="mb-4 text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#f2c879]">
+              PDF Studio
+            </h4>
+            <ul className="space-y-2.5 text-sm font-semibold text-[#d8cbb7]">
+              <li><Link href="/pdf/edit-pdf" className="transition hover:text-white">Edit PDF</Link></li>
+              <li><Link href="/pdf/merge-pdf" className="transition hover:text-white">Merge PDF</Link></li>
+              <li><Link href="/pdf/compress-pdf" className="transition hover:text-white">Compress PDF</Link></li>
+              <li><Link href="/pdf/pdf-to-word" className="transition hover:text-white">PDF to Word</Link></li>
+              <li><Link href="/pdf" className="inline-flex items-center gap-1 text-[#f2c879] transition hover:text-white">All PDF tools <ArrowRight className="h-3.5 w-3.5" /></Link></li>
             </ul>
           </div>
 
-          {/* Legal / Pages */}
           <div>
-            <h4 className="font-bold text-slate-700 uppercase tracking-wider text-[10px] mb-4">Information</h4>
-            <ul className="space-y-2 font-medium">
-              <li>
-                <Link href="/about" className="hover:text-slate-800 transition-colors">About Us</Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-slate-800 transition-colors">Contact Us</Link>
-              </li>
-              <li>
-                <Link href="/sitemap.xml" className="hover:text-slate-800 transition-colors">Sitemap</Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="hover:text-slate-800 transition-colors">Privacy Policy</Link>
-              </li>
-              <li>
-                <Link href="/terms" className="hover:text-slate-800 transition-colors">Terms of Service</Link>
-              </li>
-              <li>
-                <Link href="/disclaimer" className="hover:text-slate-800 transition-colors">Disclaimer</Link>
-              </li>
+            <h4 className="mb-4 text-[0.68rem] font-black uppercase tracking-[0.2em] text-[#f2c879]">
+              Company
+            </h4>
+            <ul className="space-y-2.5 text-sm font-semibold text-[#d8cbb7]">
+              <li><Link href="/about" className="transition hover:text-white">About</Link></li>
+              <li><Link href="/contact" className="transition hover:text-white">Contact</Link></li>
+              <li><Link href="/privacy" className="transition hover:text-white">Privacy</Link></li>
+              <li><Link href="/terms" className="transition hover:text-white">Terms</Link></li>
+              <li><Link href="/disclaimer" className="transition hover:text-white">Disclaimer</Link></li>
             </ul>
           </div>
         </div>
 
-        {/* Disclaimer Warning to limit liability on calcs */}
-        <div className="border-t border-slate-200/60 pt-6 text-[10px] text-slate-400 font-medium leading-relaxed mb-6">
-          <strong>Disclaimer:</strong> All calculations provided by Tallywise.co are for informational and educational purposes only. Results are estimates based on simplified formulas and should not be construed as professional financial, tax, mortgage, clinical, or academic counseling. Always consult with certified professionals before making final financial, real estate, or health decisions.
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-between items-center text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
-          <span>&copy; {currentYear} Tallywise.co. All Rights Reserved.</span>
-          <span className="mt-2 sm:mt-0">Built for ultimate speed and accuracy.</span>
+        <div className="mt-10 border-t border-white/10 pt-6 text-xs font-semibold leading-6 text-[#bfae96]">
+          <p>
+            Calculators and document tools are provided for informational use. Results are estimates and are not
+            professional financial, tax, legal, medical, or academic advice.
+          </p>
+          <div className="mt-4 flex flex-col gap-2 text-[0.65rem] font-black uppercase tracking-[0.18em] text-[#8f9f9e] sm:flex-row sm:items-center sm:justify-between">
+            <span>Copyright {currentYear} Tallywise.co</span>
+            <span>Built for clear decisions and cleaner documents</span>
+          </div>
         </div>
       </div>
     </footer>

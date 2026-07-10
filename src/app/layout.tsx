@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
 });
 
-const SITE_TITLE = "Tallywise - Free Online Calculators & PDF Tools";
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+});
+
+const SITE_TITLE = "Tallywise - Private Browser Tools for Calculators & PDFs";
 const SITE_DESC =
-  "Free, private, in-browser tools: calculators for finance, health, and school, plus a full suite of PDF tools (merge, split, compress, convert, edit). No signup, no uploads, no paywalls.";
+  "Free, private browser tools for calculations and documents: finance, health, school, conversion, and a full PDF studio for merge, split, compress, convert, OCR, edit, and sign.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://tallywise.co"),
@@ -56,7 +61,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${fraunces.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
         {/* Google AdSense Verification Tag (Critical: must be in raw HTML head for crawler detection) */}

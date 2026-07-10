@@ -7,7 +7,9 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf
 import {
   ChevronLeft,
   ChevronRight,
+  Copy,
   Eraser,
+  FileDown,
   Highlighter,
   ImagePlus,
   Loader2,
@@ -95,6 +97,7 @@ type El =
       text: string;
       fontSizePct: number;
       color: string;
+      backgroundColor: string;
     }
   | {
       id: string;
@@ -317,6 +320,7 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
 }
 
 const DEFAULT_TEXT_COLOR = '#111827';
+const DEFAULT_PAGE_COLOR = '#ffffff';
 
 /**
  * Approximates the original ink color of a detected text line by sampling
@@ -364,6 +368,56 @@ function sampleTextColor(
       }
     };
     image.onerror = () => resolve(DEFAULT_TEXT_COLOR);
+    image.src = imageUrl;
+  });
+}
+
+function sampleBackgroundColor(
+  imageUrl: string,
+  box: { xPct: number; yPct: number; wPct: number; hPct: number }
+): Promise<string> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return resolve(DEFAULT_PAGE_COLOR);
+
+        ctx.drawImage(image, 0, 0);
+        const x = clamp(Math.round((box.xPct / 100) * canvas.width), 0, canvas.width - 1);
+        const y = clamp(Math.round((box.yPct / 100) * canvas.height), 0, canvas.height - 1);
+        const w = clamp(Math.round((box.wPct / 100) * canvas.width), 1, canvas.width - x);
+        const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
+        const samplePad = Math.max(4, Math.round(Math.min(w, h) * 0.25));
+        const sx = clamp(x - samplePad, 0, canvas.width - 1);
+        const sy = clamp(y - samplePad, 0, canvas.height - 1);
+        const sw = clamp(w + samplePad * 2, 1, canvas.width - sx);
+        const sh = clamp(h + samplePad * 2, 1, canvas.height - sy);
+        const { data } = ctx.getImageData(sx, sy, sw, sh);
+
+        let bestR = 255, bestG = 255, bestB = 255, bestScore = -Infinity;
+        for (let i = 0; i < data.length; i += 16) {
+          const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+          if (a < 200) continue;
+          const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+          const neutrality = 255 - (Math.max(r, g, b) - Math.min(r, g, b));
+          const score = luminance + neutrality * 0.25;
+          if (score > bestScore) {
+            bestScore = score;
+            bestR = r; bestG = g; bestB = b;
+          }
+        }
+
+        const toHex = (n: number) => n.toString(16).padStart(2, '0');
+        resolve(`#${toHex(bestR)}${toHex(bestG)}${toHex(bestB)}`);
+      } catch {
+        resolve(DEFAULT_PAGE_COLOR);
+      }
+    };
+    image.onerror = () => resolve(DEFAULT_PAGE_COLOR);
     image.src = imageUrl;
   });
 }
@@ -706,6 +760,7 @@ export function EditPdf() {
         text: box.text,
         fontSizePct: box.fontSizePct,
         color: DEFAULT_TEXT_COLOR,
+        backgroundColor: DEFAULT_PAGE_COLOR,
       },
     ]);
     setSelected({ kind: 'element', id });
@@ -716,8 +771,10 @@ export function EditPdf() {
     // near-black, so editing a line doesn't change how it looks.
     const pageUrl = page?.url;
     if (pageUrl) {
-      sampleTextColor(pageUrl, box).then((sampledColor) => {
-        updateEl(id, (el) => (el.type === 'replaceText' ? { ...el, color: sampledColor } : el));
+      Promise.all([sampleTextColor(pageUrl, box), sampleBackgroundColor(pageUrl, box)]).then(([sampledColor, backgroundColor]) => {
+        updateEl(id, (el) =>
+          el.type === 'replaceText' ? { ...el, color: sampledColor, backgroundColor } : el
+        );
       });
     }
   };
@@ -735,7 +792,10 @@ export function EditPdf() {
       const id = uid();
       drafting.current = { id, startX: xPct, startY: yPct };
       pushHistorySnapshot();
-      setEls((prev) => [...prev, { id, page: current, type: tool, xPct, yPct, wPct: 0, hPct: 0, color }]);
+      setEls((prev) => [
+        ...prev,
+        { id, page: current, type: tool, xPct, yPct, wPct: 0, hPct: 0, color: tool === 'whiteout' ? DEFAULT_PAGE_COLOR : color },
+      ]);
       setSelected({ kind: 'element', id });
       overlayRef.current?.setPointerCapture(e.pointerId);
       return;
@@ -873,6 +933,48 @@ export function EditPdf() {
     );
   };
 
+  const applyColor = (nextColor: string) => {
+    setColor(nextColor);
+    if (!selectedElement || selectedElement.type === 'image') return;
+    commitUpdateEl(selectedElement.id, (el) => ('color' in el ? { ...el, color: nextColor } : el));
+  };
+
+  const duplicateSelected = () => {
+    if (!selectedElement) return;
+
+    const id = uid();
+    let clone: El;
+
+    if (selectedElement.type === 'pen') {
+      clone = {
+        ...selectedElement,
+        id,
+        points: selectedElement.points.map((point) => ({
+          xPct: clamp(point.xPct + 1.5, 0, 100),
+          yPct: clamp(point.yPct + 1.5, 0, 100),
+        })),
+      };
+    } else {
+      const w = selectedElement.wPct;
+      const h = 'hPct' in selectedElement ? selectedElement.hPct : 3;
+      clone = {
+        ...selectedElement,
+        id,
+        xPct: clamp(selectedElement.xPct + 2, 0, 100 - w),
+        yPct: clamp(selectedElement.yPct + 2, 0, 100 - h),
+      };
+    }
+
+    commitEls((prev) => [...prev, clone]);
+    setSelected({ kind: 'element', id });
+  };
+
+  const clearCurrentPage = () => {
+    if (!currentEls.length) return;
+    commitEls((prev) => prev.filter((el) => el.page !== current));
+    setSelected(null);
+  };
+
   const handleImageFile = async (imageFile: File | undefined) => {
     if (!imageFile || !page) return;
     setError(null);
@@ -1008,7 +1110,7 @@ export function EditPdf() {
             y: y - padY,
             width: w + padX * 2,
             height: h + padY * 2,
-            color: rgb(1, 1, 1),
+            color: el.type === 'replaceText' ? hexToRgb(el.backgroundColor) : hexToRgb(el.color),
           });
 
           if (el.type === 'replaceText') {
@@ -1193,7 +1295,7 @@ export function EditPdf() {
         }}
       />
 
-      <div className="sticky top-2 z-20 rounded-2xl border border-slate-200 bg-white/95 p-2 shadow-sm backdrop-blur">
+      <div className="sticky top-2 z-20 rounded-[1.5rem] border border-[#dacbb3] bg-[#fffaf0]/95 p-2 shadow-xl shadow-[#3b2a16]/10 backdrop-blur">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {tools.map(([t, icon, label]) => (
@@ -1205,8 +1307,8 @@ export function EditPdf() {
                 aria-label={label}
                 className={`flex h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-all sm:w-auto sm:gap-1.5 sm:px-3 ${
                   tool === t
-                    ? 'border-rose-600 bg-rose-600 text-white shadow-sm shadow-rose-600/20'
-                    : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300 hover:text-rose-600'
+                    ? 'border-[#1b2a2f] bg-[#1b2a2f] text-[#f6efe1] shadow-sm shadow-slate-900/20'
+                    : 'border-[#dacbb3] bg-white/70 text-[#5f554d] hover:border-[#b77a22]/50 hover:text-[#241c17]'
                 }`}
               >
                 {icon}
@@ -1218,7 +1320,7 @@ export function EditPdf() {
               onClick={() => imageInputRef.current?.click()}
               title="Add image"
               aria-label="Add image"
-              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 text-sm font-bold text-slate-600 transition-all hover:border-rose-300 hover:text-rose-600 sm:gap-1.5 sm:px-3"
+              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 px-2 text-sm font-bold text-[#5f554d] transition-all hover:border-[#b77a22]/50 hover:text-[#241c17] sm:gap-1.5 sm:px-3"
             >
               <ImagePlus className="h-4 w-4" />
               <span className="hidden text-xs sm:inline">Image</span>
@@ -1232,7 +1334,7 @@ export function EditPdf() {
               disabled={!pastEls.length}
               title="Undo"
               aria-label="Undo"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Undo2 className="h-4 w-4" />
             </button>
@@ -1242,12 +1344,12 @@ export function EditPdf() {
               disabled={!futureEls.length}
               title="Redo"
               aria-label="Redo"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Redo2 className="h-4 w-4" />
             </button>
 
-            <div className="mx-1 hidden h-7 w-px bg-slate-200 sm:block" />
+            <div className="mx-1 hidden h-7 w-px bg-[#dacbb3] sm:block" />
 
             <button
               type="button"
@@ -1255,18 +1357,27 @@ export function EditPdf() {
               disabled={zoom <= 0.65}
               title="Zoom out"
               aria-label="Zoom out"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomOut className="h-4 w-4" />
             </button>
-            <span className="min-w-12 text-center text-xs font-black text-slate-500">{Math.round(zoom * 100)}%</span>
+            <button
+              type="button"
+              onClick={() => setZoom(1)}
+              title="Fit page"
+              aria-label="Fit page"
+              className="flex h-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5f554d] transition-all hover:border-[#b77a22]/50"
+            >
+              Fit
+            </button>
+            <span className="min-w-12 text-center text-xs font-black text-[#6f6459]">{Math.round(zoom * 100)}%</span>
             <button
               type="button"
               onClick={() => setZoom((value) => clamp(Number((value + 0.15).toFixed(2)), 0.65, 2.4))}
               disabled={zoom >= 2.4}
               title="Zoom in"
               aria-label="Zoom in"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600 transition-all hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomIn className="h-4 w-4" />
             </button>
@@ -1277,7 +1388,7 @@ export function EditPdf() {
               disabled={Boolean(ocrStatus)}
               title="OCR this page"
               aria-label="OCR this page"
-              className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-sky-200 bg-sky-50 px-3 text-xs font-black text-sky-700 transition-all hover:border-sky-300 disabled:cursor-wait disabled:opacity-60"
+              className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-[#0f766e]/25 bg-[#0f766e]/10 px-3 text-xs font-black text-[#0f766e] transition-all hover:border-[#0f766e]/45 disabled:cursor-wait disabled:opacity-60"
             >
               {ocrStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
               OCR
@@ -1285,13 +1396,13 @@ export function EditPdf() {
           </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
-          <span className="mr-1 text-[10px] font-black uppercase tracking-wide text-slate-400">Color</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#dacbb3] pt-2">
+          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">Color</span>
           {COLORS.map((c) => (
             <button
               key={c}
               type="button"
-              onClick={() => setColor(c)}
+              onClick={() => applyColor(c)}
               title={`Color ${c}`}
               aria-label={`Color ${c}`}
               className={`h-7 w-7 rounded-full border transition-transform ${
@@ -1328,17 +1439,37 @@ export function EditPdf() {
           )}
 
           {selectedElement && (
-            <button
-              type="button"
-              onClick={deleteSelected}
-              title={selectedElement.type === 'replaceText' ? 'Delete replacement text' : 'Delete selected item'}
-              aria-label={selectedElement.type === 'replaceText' ? 'Delete replacement text' : 'Delete selected item'}
-              className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-rose-200 bg-rose-50 px-3 text-xs font-black text-rose-600 hover:border-rose-300"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={duplicateSelected}
+                title="Duplicate selected item"
+                aria-label="Duplicate selected item"
+                className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-[#dacbb3] bg-white/70 px-3 text-xs font-black text-[#5f554d] hover:border-[#b77a22]/50"
+              >
+                <Copy className="h-4 w-4" />
+                Duplicate
+              </button>
+              <button
+                type="button"
+                onClick={deleteSelected}
+                title={selectedElement.type === 'replaceText' ? 'Delete replacement text' : 'Delete selected item'}
+                aria-label={selectedElement.type === 'replaceText' ? 'Delete replacement text' : 'Delete selected item'}
+                className="flex h-9 items-center justify-center gap-1 rounded-md border border-[#be123c]/20 bg-[#fff1f2] px-3 text-xs font-black text-[#be123c] hover:border-[#be123c]/40"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </button>
+            </>
           )}
+          <button
+            type="button"
+            onClick={clearCurrentPage}
+            disabled={!currentEls.length}
+            className="flex h-9 items-center justify-center rounded-md border border-[#dacbb3] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5f554d] hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-35"
+          >
+            Clear page
+          </button>
         </div>
       </div>
 
@@ -1359,9 +1490,24 @@ export function EditPdf() {
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[118px_minmax(0,1fr)]">
-        <aside className="order-2 rounded-2xl border border-slate-200 bg-slate-50 p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
-          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-wide text-slate-400">
+      {selectedElement && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 px-4 py-3 text-xs font-bold text-[#6f6459]">
+          <span>
+            Selected: <strong className="text-[#241c17]">{selectedElement.type === 'replaceText' ? 'source text' : selectedElement.type}</strong>
+          </span>
+          {elementHasBox(selectedElement) && (
+            <span>
+              Position {Math.round(selectedElement.xPct)}%, {Math.round(selectedElement.yPct)}% -
+              Width {Math.round(selectedElement.wPct)}%
+            </span>
+          )}
+          <span className="text-[#8a5417]">Drag to move. Resize from the handle. Delete masks source text.</span>
+        </div>
+      )}
+
+      <div className="grid gap-4 lg:grid-cols-[124px_minmax(0,1fr)]">
+        <aside className="order-2 rounded-[1.5rem] border border-[#dacbb3] bg-[#fbf4e6] p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
+          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">
             <PanelLeft className="h-3.5 w-3.5" />
             Pages
           </div>
@@ -1376,21 +1522,21 @@ export function EditPdf() {
                 }}
                 className={`min-w-20 rounded-xl border bg-white p-1 text-left transition-all lg:min-w-0 ${
                   index === current
-                    ? 'border-rose-500 shadow-sm shadow-rose-500/20'
-                    : 'border-slate-200 hover:border-rose-200'
+                    ? 'border-[#b77a22] shadow-sm shadow-[#b77a22]/20'
+                    : 'border-[#dacbb3] hover:border-[#b77a22]/45'
                 }`}
                 aria-label={`Go to page ${index + 1}`}
               >
                 <img src={p.url} alt={`Page ${index + 1} thumbnail`} className="h-24 w-full rounded-lg object-cover lg:h-auto" />
-                <span className="mt-1 block text-center text-[10px] font-black text-slate-500">Page {index + 1}</span>
+                <span className="mt-1 block text-center text-[10px] font-black text-[#6f6459]">Page {index + 1}</span>
               </button>
             ))}
           </div>
         </aside>
 
         <section className="order-1 min-w-0 lg:order-2">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-            <button onClick={reset} className="text-xs font-bold text-rose-600 hover:underline">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 px-3 py-2">
+            <button onClick={reset} className="text-xs font-black text-[#be123c] hover:underline">
               Change file
             </button>
             <div className="flex items-center justify-center gap-3">
@@ -1399,11 +1545,11 @@ export function EditPdf() {
                 onClick={() => setCurrent((c) => Math.max(0, c - 1))}
                 disabled={current === 0}
                 aria-label="Previous page"
-                className="rounded-md border border-slate-200 bg-white p-2 text-slate-600 disabled:opacity-30"
+                className="rounded-md border border-[#dacbb3] bg-white p-2 text-[#5f554d] disabled:opacity-30"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs font-bold text-slate-500">
+              <span className="text-xs font-black text-[#5f554d]">
                 Page {current + 1} of {pages.length}
               </span>
               <button
@@ -1411,17 +1557,17 @@ export function EditPdf() {
                 onClick={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
                 disabled={current === pages.length - 1}
                 aria-label="Next page"
-                className="rounded-md border border-slate-200 bg-white p-2 text-slate-600 disabled:opacity-30"
+                className="rounded-md border border-[#dacbb3] bg-white p-2 text-[#5f554d] disabled:opacity-30"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">
               {page.textBoxes.length ? `${page.textBoxes.length} editable text lines` : 'No text layer yet. Try OCR.'}
             </span>
           </div>
 
-          <div className="max-h-[76vh] overflow-auto rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_1px_1px,rgba(100,116,139,0.20)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
+          <div className="max-h-[76vh] overflow-auto rounded-[1.5rem] border border-[#dacbb3] bg-[radial-gradient(circle_at_1px_1px,rgba(70,51,28,0.18)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
             <div className="mx-auto" style={{ width: `${displayWidth}px`, maxWidth: zoom <= 1 ? '100%' : undefined }}>
               <div
                 ref={overlayRef}
@@ -1429,7 +1575,7 @@ export function EditPdf() {
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onPointerCancel={onPointerUp}
-                className="relative touch-none select-none overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                className="relative touch-none select-none overflow-hidden rounded-xl border border-[#dacbb3] bg-white shadow-2xl shadow-[#3b2a16]/10"
                 style={{ cursor: tool === 'select' ? 'default' : tool === 'editText' ? 'text' : 'crosshair' }}
               >
                 <img src={page.url} alt={`Page ${current + 1}`} className="pointer-events-none w-full" draggable={false} />
@@ -1476,7 +1622,7 @@ export function EditPdf() {
                           top: `${el.yPct}%`,
                           width: `${el.wPct}%`,
                           minHeight: `${textHeight}%`,
-                          backgroundColor: el.type === 'replaceText' ? '#ffffff' : 'transparent',
+                          backgroundColor: el.type === 'replaceText' ? el.backgroundColor : 'transparent',
                           color: el.color,
                           fontSize,
                           outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
@@ -1533,7 +1679,7 @@ export function EditPdf() {
                           width: `${el.wPct}%`,
                           height: `${el.hPct}%`,
                           backgroundColor:
-                            el.type === 'whiteout' ? '#ffffff' : el.type === 'highlight' ? el.color : 'transparent',
+                            el.type === 'whiteout' ? el.color : el.type === 'highlight' ? el.color : 'transparent',
                           opacity: el.type === 'highlight' ? 0.35 : 1,
                           border:
                             el.type === 'rect'
@@ -1592,7 +1738,7 @@ export function EditPdf() {
 
       {error && <ErrorNote>{error}</ErrorNote>}
       <PrimaryButton onClick={exportPdf} loading={loading}>
-        <Save className="h-4 w-4" />
+        {loading ? <Save className="h-4 w-4" /> : <FileDown className="h-4 w-4" />}
         {loading ? 'Saving...' : 'Save edited PDF'}
       </PrimaryButton>
     </PdfToolShell>

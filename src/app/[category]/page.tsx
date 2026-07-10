@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ArrowRight, Calculator, CheckCircle2 } from 'lucide-react';
 import { calculators, CATEGORIES, CategoryKey } from '@/config/calculators';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
@@ -12,6 +13,14 @@ interface CategoryPageProps {
     category: string;
   }>;
 }
+
+const categoryAccent: Record<CategoryKey, { badge: string; glow: string }> = {
+  finance: { badge: 'bg-[#0f766e] text-white', glow: 'from-[#0f766e]/18' },
+  health: { badge: 'bg-[#be123c] text-white', glow: 'from-[#be123c]/18' },
+  school: { badge: 'bg-[#4338ca] text-white', glow: 'from-[#4338ca]/18' },
+  everyday: { badge: 'bg-[#b77a22] text-white', glow: 'from-[#b77a22]/20' },
+  conversion: { badge: 'bg-[#0f766e] text-white', glow: 'from-[#0f766e]/18' },
+};
 
 export function generateStaticParams() {
   return [
@@ -50,107 +59,81 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   }
 
   const categoryCalculators = calculators.filter((calc) => calc.category === catKey);
-
-  const getCategoryColor = (cat: CategoryKey) => {
-    if (cat === 'finance') return 'bg-emerald-500 text-white';
-    if (cat === 'health') return 'bg-rose-500 text-white';
-    if (cat === 'school') return 'bg-indigo-500 text-white';
-    if (cat === 'conversion') return 'bg-teal-500 text-white';
-    return 'bg-amber-500 text-white';
-  };
-
-  const getBorderHoverColor = (cat: CategoryKey) => {
-    if (cat === 'finance') return 'hover:border-emerald-500/20 hover:shadow-emerald-500/5';
-    if (cat === 'health') return 'hover:border-rose-500/20 hover:shadow-rose-500/5';
-    if (cat === 'school') return 'hover:border-indigo-500/20 hover:shadow-indigo-500/5';
-    if (cat === 'conversion') return 'hover:border-teal-500/20 hover:shadow-teal-500/5';
-    return 'hover:border-amber-500/20 hover:shadow-amber-500/5';
-  };
+  const accent = categoryAccent[catKey];
 
   return (
     <>
       <Header />
-      
-      <main className="flex-1 bg-slate-50 py-12">
-        <div className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8">
+
+      <main className="site-page py-10 md:py-14">
+        <div className="site-container">
           <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
             <aside className="hidden 2xl:block">
-              <AdSlot id={`category-${catKey}-left`} type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id={`category-${catKey}-left`} type="sidebar" className="my-0" />
             </aside>
 
-            <div className="min-w-0">
-              <div className="space-y-12">
-                {/* Category Hero banner */}
-                <div className="bg-white border border-slate-100 rounded-3xl p-8 md:p-12 shadow-sm space-y-4">
-                  <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${getCategoryColor(catKey)}`}>
-                    {categoryInfo.name} Category Hub
-                  </span>
-                  <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight mt-2">
-                    {categoryInfo.name} Calculators
-                  </h1>
-                  <p className="text-slate-500 text-md max-w-2xl font-medium leading-relaxed">
-                    {categoryInfo.description} Browse our selection of verified calculator tools below.
-                  </p>
+            <div className="min-w-0 space-y-8">
+              <section className={`paper-card relative overflow-hidden rounded-[2rem] p-6 md:p-10`}>
+                <div className={`absolute inset-0 -z-0 bg-gradient-to-br ${accent.glow} via-transparent to-transparent`} />
+                <div className="relative z-10 grid gap-8 lg:grid-cols-[1fr_260px] lg:items-end">
+                  <div>
+                    <span className={`inline-flex rounded-full px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] ${accent.badge}`}>
+                      {categoryInfo.name} hub
+                    </span>
+                    <h1 className="font-display mt-5 max-w-3xl text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
+                      {categoryInfo.name} calculators that stay readable.
+                    </h1>
+                    <p className="mt-5 max-w-2xl text-base font-semibold leading-8 text-[#6f6459]">
+                      {categoryInfo.description} Each tool is formatted for quick input, clear output, and practical
+                      context below the calculator.
+                    </p>
+                  </div>
+                  <div className="rounded-[1.5rem] border border-[#dacbb3] bg-[#fffaf0]/76 p-5">
+                    <p className="text-[0.65rem] font-black uppercase tracking-[0.16em] text-[#8a5417]">
+                      In this section
+                    </p>
+                    <p className="font-display mt-2 text-4xl font-black text-[#241c17]">{categoryCalculators.length}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#6f6459]">working calculators</p>
+                    <div className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#0f766e]">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Live widgets
+                    </div>
+                  </div>
                 </div>
+              </section>
 
-                {/* Calculator Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {categoryCalculators.map((calc) => {
-                    const isInteractive = true;
-
-                    return (
-                      <Link
-                        key={calc.slug}
-                        href={`/${calc.category}/${calc.slug}`}
-                        className={`group bg-white rounded-2xl p-6 border border-slate-100 transition-all duration-300 flex flex-col justify-between ${getBorderHoverColor(catKey)} hover:shadow-xl`}
-                      >
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${getCategoryColor(calc.category)}`}>
-                              {calc.category}
-                            </span>
-                            {isInteractive ? (
-                              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
-                                Live Widget
-                              </span>
-                            ) : (
-                              <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full">
-                                In Verification
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="text-md font-bold text-slate-800 group-hover:text-indigo-650 transition-colors">
-                            {calc.name}
-                          </h3>
-                          
-                          <p className="text-xs text-slate-450 leading-relaxed line-clamp-2 font-medium">
-                            {calc.seoDescription}
-                          </p>
-                        </div>
-
-                        <div className="pt-4 mt-4 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 group-hover:text-indigo-650 transition-colors">
-                          <span>Calculate Now</span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2.5}
-                            stroke="currentColor"
-                            className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {categoryCalculators.map((calc) => (
+                  <Link
+                    key={calc.slug}
+                    href={`/${calc.category}/${calc.slug}`}
+                    className="tool-card group flex min-h-[205px] flex-col justify-between rounded-[1.5rem] p-5"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className={`rounded-full px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.16em] ${accent.badge}`}>
+                          {calc.category}
+                        </span>
+                        <Calculator className="h-5 w-5 text-[#b77a22]" />
+                      </div>
+                      <h2 className="font-display mt-5 text-2xl font-black leading-tight text-[#241c17]">
+                        {calc.name}
+                      </h2>
+                      <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-[#6f6459]">
+                        {calc.seoDescription}
+                      </p>
+                    </div>
+                    <div className="mt-5 flex items-center justify-between border-t border-[#dacbb3] pt-4 text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
+                      <span>Calculate now</span>
+                      <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                ))}
+              </section>
             </div>
 
             <aside className="hidden 2xl:block">
-              <AdSlot id={`category-${catKey}-right`} type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id={`category-${catKey}-right`} type="sidebar" className="my-0" />
             </aside>
           </div>
         </div>

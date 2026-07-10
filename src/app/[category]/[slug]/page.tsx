@@ -1,11 +1,12 @@
 import React from 'react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ArrowRight, ChevronDown, Home } from 'lucide-react';
 import { calculators, CalculatorDef } from '@/config/calculators';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { AdSlot } from '@/components/common/AdSlot';
 import { calculatorComponents, ComingSoonCalculator } from '@/components/calculators/registry';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 
 interface CalculatorPageProps {
@@ -14,6 +15,14 @@ interface CalculatorPageProps {
     slug: string;
   }>;
 }
+
+const categoryBadgeColor: Record<string, string> = {
+  finance: 'bg-[#0f766e] text-white',
+  health: 'bg-[#be123c] text-white',
+  school: 'bg-[#4338ca] text-white',
+  conversion: 'bg-[#0f766e] text-white',
+  everyday: 'bg-[#b77a22] text-white',
+};
 
 export function generateStaticParams() {
   return calculators.map((calc) => ({
@@ -71,12 +80,12 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
   const faqSchema = calc.faqs.length > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    'mainEntity': calc.faqs.map((faq) => ({
+    mainEntity: calc.faqs.map((faq) => ({
       '@type': 'Question',
-      'name': faq.question,
-      'acceptedAnswer': {
+      name: faq.question,
+      acceptedAnswer: {
         '@type': 'Answer',
-        'text': faq.answer,
+        text: faq.answer,
       },
     })),
   } : null;
@@ -84,24 +93,13 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
   const webAppSchema = {
     '@context': 'https://schema.org',
     '@type': 'WebApplication',
-    'name': calc.name,
-    'description': calc.seoDescription,
-    'url': `https://tallywise.co/${calc.category}/${calc.slug}`,
-    'applicationCategory': `${calc.category}Application`,
-    'operatingSystem': 'All',
-    'browserRequirements': 'Requires JavaScript. Requires HTML5.',
+    name: calc.name,
+    description: calc.seoDescription,
+    url: `https://tallywise.co/${calc.category}/${calc.slug}`,
+    applicationCategory: `${calc.category}Application`,
+    operatingSystem: 'All',
+    browserRequirements: 'Requires JavaScript. Requires HTML5.',
   };
-
-  const categoryBadgeColor =
-    calc.category === 'finance'
-      ? 'bg-emerald-550 text-white'
-      : calc.category === 'health'
-      ? 'bg-rose-500 text-white'
-      : calc.category === 'school'
-      ? 'bg-indigo-500 text-white'
-      : calc.category === 'conversion'
-      ? 'bg-teal-500 text-white'
-      : 'bg-amber-500 text-white';
 
   const breadcrumbSchema = {
     '@context': 'https://schema.org',
@@ -128,6 +126,8 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
     ],
   };
 
+  const badgeColor = categoryBadgeColor[calc.category] ?? categoryBadgeColor.everyday;
+
   return (
     <>
       {faqSchema && (
@@ -147,31 +147,37 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
 
       <Header />
 
-      <main className="flex-1 bg-slate-50 py-8">
-        <div className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8">
+      <main className="site-page py-8 md:py-12">
+        <div className="site-container">
           <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
             <aside className="hidden 2xl:block">
-              <AdSlot id="left-sidebar-ad" type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id="left-sidebar-ad" type="sidebar" className="my-0" />
             </aside>
 
             <div className="min-w-0">
-              <div className="mx-auto max-w-4xl space-y-6">
-                <div className="flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                  <Link href="/" className="hover:text-slate-600 transition-colors">Home</Link>
+              <div className="mx-auto max-w-5xl space-y-7">
+                <nav className="flex flex-wrap items-center gap-2 text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#8f8170]">
+                  <Link href="/" className="inline-flex items-center gap-1 transition hover:text-[#241c17]">
+                    <Home className="h-3.5 w-3.5" />
+                    Home
+                  </Link>
                   <span>/</span>
-                  <Link href={`/${calc.category}`} className="hover:text-slate-600 transition-colors">{calc.category}</Link>
+                  <Link href={`/${calc.category}`} className="transition hover:text-[#241c17]">{calc.category}</Link>
                   <span>/</span>
-                  <span className="text-slate-550 font-bold">{calc.name}</span>
-                </div>
+                  <span className="text-[#241c17]">{calc.name}</span>
+                </nav>
 
-                <div className="space-y-2">
-                  <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight leading-none">
+                <section className="paper-card rounded-[2rem] p-6 md:p-9">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] ${badgeColor}`}>
+                    {calc.category} calculator
+                  </span>
+                  <h1 className="font-display mt-5 max-w-4xl text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
                     {calc.h1}
                   </h1>
-                  <p className="text-sm font-medium text-slate-450">
+                  <p className="mt-5 max-w-3xl text-base font-semibold leading-8 text-[#6f6459]">
                     {calc.seoDescription}
                   </p>
-                </div>
+                </section>
 
                 <div className="w-full">
                   {CalculatorWidget ? (
@@ -181,16 +187,16 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
                   )}
                 </div>
 
-                <article className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 space-y-6 shadow-sm">
-                  <div className="prose prose-slate max-w-none prose-sm leading-relaxed prose-headings:font-extrabold prose-headings:text-slate-800 prose-h3:text-sm prose-h3:uppercase prose-h3:tracking-wide prose-h3:text-slate-400 prose-ul:list-disc prose-ul:pl-5 text-slate-600 font-medium">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 border-b border-slate-100 pb-3">
-                      How to Calculate & Formula Details
+                <article className="paper-card rounded-[1.75rem] p-6 md:p-8">
+                  <div className="content-prose max-w-none text-sm font-semibold">
+                    <h2 className="font-display border-b border-[#dacbb3] pb-4 text-3xl font-black tracking-tight text-[#241c17]">
+                      How this calculator works
                     </h2>
 
                     {calc.formulaDescription && (
-                      <div className="p-4 bg-slate-50 border border-slate-200/60 rounded-xl font-mono text-xs text-slate-650 my-4">
-                        <span className="font-bold text-[10px] text-slate-400 block uppercase tracking-wide mb-1">
-                          Mathematical Model Formula
+                      <div className="my-5 rounded-2xl border border-[#dacbb3] bg-[#fbf4e6] p-4 font-mono text-xs font-bold text-[#463b33]">
+                        <span className="mb-2 block text-[0.62rem] font-black uppercase tracking-[0.16em] text-[#8a5417]">
+                          Formula model
                         </span>
                         <code>{calc.formulaDescription}</code>
                       </div>
@@ -204,32 +210,23 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
                 </article>
 
                 {calc.faqs.length > 0 && (
-                  <section className="bg-white rounded-2xl border border-slate-100 p-6 md:p-8 shadow-sm space-y-6">
-                    <h2 className="text-xl md:text-2xl font-black text-slate-800 border-b border-slate-100 pb-3">
-                      Frequently Asked Questions
+                  <section className="paper-card rounded-[1.75rem] p-6 md:p-8">
+                    <h2 className="font-display border-b border-[#dacbb3] pb-4 text-3xl font-black tracking-tight text-[#241c17]">
+                      Frequently asked questions
                     </h2>
-                    <div className="space-y-3">
+                    <div className="mt-5 space-y-3">
                       {calc.faqs.map((faq, idx) => (
                         <details
                           key={idx}
-                          className="group border border-slate-100 rounded-xl bg-slate-50/50 p-4 hover:border-slate-200 transition-all [&_summary::-webkit-details-marker]:hidden"
+                          className="group rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/72 p-4 transition hover:border-[#b77a22]/40 [&_summary::-webkit-details-marker]:hidden"
                         >
-                          <summary className="flex cursor-pointer items-center justify-between gap-1.5 text-sm font-bold text-slate-700 select-none">
+                          <summary className="flex cursor-pointer select-none items-center justify-between gap-3 text-sm font-black text-[#241c17]">
                             <span>{faq.question}</span>
-                            <span className="ml-1.5 shrink-0 rounded-full bg-white p-1 text-slate-400 group-open:rotate-180 transition-transform shadow-sm border border-slate-100">
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth={2.5}
-                                stroke="currentColor"
-                                className="h-3.5 w-3.5"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                              </svg>
+                            <span className="shrink-0 rounded-full border border-[#dacbb3] bg-white p-1.5 text-[#8a5417] transition group-open:rotate-180">
+                              <ChevronDown className="h-3.5 w-3.5" />
                             </span>
                           </summary>
-                          <p className="mt-3 text-xs leading-relaxed font-semibold text-slate-550 border-t border-slate-100 pt-3">
+                          <p className="mt-3 border-t border-[#dacbb3] pt-3 text-sm font-semibold leading-7 text-[#6f6459]">
                             {faq.answer}
                           </p>
                         </details>
@@ -240,28 +237,31 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
 
                 {relatedCalculators.length > 0 && (
                   <section className="space-y-4">
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                      Related Calculators in {calc.category}
-                    </h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="eyebrow">Related</p>
+                      <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#241c17]">
+                        More calculators in this workflow
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
                       {relatedCalculators.map((rCalc) => (
                         <Link
                           key={rCalc.slug}
                           href={`/${rCalc.category}/${rCalc.slug}`}
-                          className="bg-white rounded-xl p-4 border border-slate-100 hover:border-indigo-500/20 hover:shadow-md transition-all flex flex-col justify-between"
+                          className="tool-card group flex min-h-[165px] flex-col justify-between rounded-[1.35rem] p-5"
                         >
                           <div>
-                            <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${categoryBadgeColor} mb-2 inline-block`}>
+                            <span className={`mb-3 inline-flex rounded-full px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em] ${categoryBadgeColor[rCalc.category] ?? categoryBadgeColor.everyday}`}>
                               {rCalc.category}
                             </span>
-                            <h3 className="text-xs font-bold text-slate-750">{rCalc.name}</h3>
-                            <p className="text-[10px] text-slate-400 line-clamp-2 mt-1 leading-normal font-medium">
+                            <h3 className="font-display text-xl font-black text-[#241c17]">{rCalc.name}</h3>
+                            <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-[#6f6459]">
                               {rCalc.seoDescription}
                             </p>
                           </div>
-                          <div className="text-[10px] font-bold text-indigo-650 mt-3 flex items-center justify-between">
+                          <div className="mt-4 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
                             <span>Compute</span>
-                            <span>-&gt;</span>
+                            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                           </div>
                         </Link>
                       ))}
@@ -272,7 +272,7 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
             </div>
 
             <aside className="hidden 2xl:block">
-              <AdSlot id="right-sidebar-ad" type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id="right-sidebar-ad" type="sidebar" className="my-0" />
             </aside>
           </div>
         </div>

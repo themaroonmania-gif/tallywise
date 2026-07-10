@@ -12,20 +12,23 @@ export default function DisclaimerPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-slate-50 py-12">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 bg-white border border-slate-105 rounded-3xl p-8 md:p-12 shadow-sm space-y-6">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">General Disclaimer</h1>
-          <p className="text-slate-400 text-xs font-semibold">Last Updated: July 8, 2026</p>
-          
-          <div className="prose prose-slate max-w-none text-slate-600 text-sm leading-relaxed space-y-4 font-medium">
-            <p>The calculators and estimators on Tallywise.co are provided as self-help tools for your independent use and are not intended to provide professional advice.</p>
-            
-            <h2 className="text-lg font-bold text-slate-700 pt-4">No Financial or Legal Advice</h2>
-            <p>Calculations, amortization charts, tax rates, and payroll deductions shown on these pages are simplified models and estimations. They do not account for all potential local taxes, deductions, individual credit histories, health circumstances, or academic syllabus specifications. We do not guarantee their financial, legal, or mathematical accuracy.</p>
+      <main className="site-page py-10 md:py-14">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <article className="paper-card rounded-[2rem] p-6 md:p-10">
+            <span className="eyebrow">Disclaimer</span>
+            <h1 className="font-display mt-5 text-5xl font-black tracking-tight text-[#241c17]">General Disclaimer</h1>
+            <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-[#8f8170]">Last updated: July 8, 2026</p>
 
-            <h2 className="text-lg font-bold text-slate-700 pt-4">No Clinical/Medical Advice</h2>
-            <p>BMI calculators and TDEE calorie projections are screening guidelines based on population averages. They are not clinical diagnostic tools. Consult with certified primary care physicians or dieticians before starting a weight loss, weight gain, or hydration regimen.</p>
-          </div>
+            <div className="content-prose mt-8 space-y-5 border-t border-[#dacbb3] pt-8 text-sm font-semibold">
+              <p>The calculators and estimators on Tallywise.co are provided as self-help tools for independent use and are not intended to provide professional advice.</p>
+
+              <h2 className="font-display text-2xl font-black">No financial or legal advice</h2>
+              <p>Calculations, amortization charts, tax rates, and payroll deductions shown on these pages are simplified models and estimations. They do not account for all local taxes, deductions, individual credit histories, health circumstances, or academic syllabus specifications. We do not guarantee financial, legal, or mathematical accuracy.</p>
+
+              <h2 className="font-display text-2xl font-black">No clinical or medical advice</h2>
+              <p>BMI calculators and TDEE calorie projections are screening guidelines based on population averages. They are not clinical diagnostic tools. Consult with certified primary care physicians or dieticians before starting a weight loss, weight gain, or hydration regimen.</p>
+            </div>
+          </article>
         </div>
       </main>
       <Footer />

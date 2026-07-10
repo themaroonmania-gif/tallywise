@@ -1,12 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f6efe1;
+  --foreground: #241c17;
+  --surface: #fffaf0;
+  --surface-strong: #ffffff;
+  --surface-muted: #efe5d2;
+  --line: rgba(70, 51, 28, 0.14);
+  --line-strong: rgba(70, 51, 28, 0.24);
+  --ink: #241c17;
+  --muted: #6f6459;
+  --muted-2: #9a8c7a;
+  --brand-ink: #1b2a2f;
+  --brand-brass: #b77a22;
+  --brand-emerald: #0f766e;
+  --brand-rose: #be123c;
+  --brand-indigo: #4338ca;
 
   /* Brand */
-  --color-brand-primary: #4f46e5;
-  --color-brand-secondary: #10b981;
+  --color-brand-primary: #1b2a2f;
+  --color-brand-secondary: #b77a22;
 
   /* Category accents */
   --color-cat-finance: #10b981;
@@ -19,8 +32,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-jakarta);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-fraunces);
 }
 
 /* In-between shades used throughout the calculator UI (e.g. text-slate-650,
@@ -46,6 +60,132 @@
    Site stays light regardless of OS theme until real dark mode is built. */
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(183, 122, 34, 0.16), transparent 28rem),
+    radial-gradient(circle at 85% 10%, rgba(15, 118, 110, 0.13), transparent 24rem),
+    linear-gradient(180deg, #fbf5e8 0%, var(--background) 48%, #efe5d2 100%);
   color: var(--foreground);
+  min-width: 320px;
+}
+
+::selection {
+  background: rgba(183, 122, 34, 0.28);
+  color: var(--ink);
+}
+
+.font-display {
+  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+}
+
+.site-page {
+  position: relative;
+  isolation: isolate;
+  flex: 1;
+  overflow: hidden;
+  background:
+    linear-gradient(rgba(36, 28, 23, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(36, 28, 23, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+.site-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.68), transparent 34rem),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.86), rgba(246, 239, 225, 0.72));
+  pointer-events: none;
+}
+
+.site-container {
+  width: min(100%, 1560px);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .site-container {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-container {
+    padding-inline: 2rem;
+  }
+}
+
+.paper-card {
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 240, 0.96)),
+    var(--surface);
+  box-shadow: 0 24px 70px rgba(59, 42, 22, 0.08);
+}
+
+.ink-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background:
+    radial-gradient(circle at 10% 10%, rgba(183, 122, 34, 0.28), transparent 18rem),
+    radial-gradient(circle at 90% 0%, rgba(15, 118, 110, 0.24), transparent 18rem),
+    linear-gradient(135deg, #18262b 0%, #231b17 100%);
+  box-shadow: 0 24px 80px rgba(24, 38, 43, 0.22);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(183, 122, 34, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.72);
+  color: #8a5417;
+  padding: 0.42rem 0.72rem;
+  font-size: 0.69rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tool-card {
+  border: 1px solid var(--line);
+  background: rgba(255, 250, 240, 0.86);
+  box-shadow: 0 12px 36px rgba(59, 42, 22, 0.055);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.tool-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(183, 122, 34, 0.34);
+  box-shadow: 0 22px 54px rgba(59, 42, 22, 0.1);
+}
+
+.soft-input {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.soft-input:focus {
+  border-color: rgba(183, 122, 34, 0.62);
+  box-shadow: 0 0 0 4px rgba(183, 122, 34, 0.13);
+  outline: none;
+}
+
+.content-prose h2,
+.content-prose h3 {
+  color: var(--ink);
+}
+
+.content-prose p,
+.content-prose li {
+  color: #5f554d;
+  line-height: 1.78;
+}
+
+.content-prose strong {
+  color: var(--ink);
 }

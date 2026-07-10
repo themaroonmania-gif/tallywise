@@ -2,191 +2,189 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { ArrowRight, Calculator, FileText, Search, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 import { calculators, CATEGORIES, CategoryKey } from '@/config/calculators';
+import { pdfTools } from '@/config/pdfTools';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { AdSlot } from '@/components/common/AdSlot';
 
+type FilterKey = CategoryKey | 'pdf' | 'all';
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: 'all', label: 'All tools' },
+  { key: 'pdf', label: 'PDF Studio' },
+  ...Object.entries(CATEGORIES).map(([key, value]) => ({ key: key as CategoryKey, label: value.name })),
+];
+
+const categoryBadge: Record<FilterKey, string> = {
+  all: 'bg-[#1b2a2f] text-[#f6efe1]',
+  pdf: 'bg-[#be123c] text-white',
+  finance: 'bg-[#0f766e] text-white',
+  health: 'bg-[#be123c] text-white',
+  school: 'bg-[#4338ca] text-white',
+  everyday: 'bg-[#b77a22] text-white',
+  conversion: 'bg-[#0f766e] text-white',
+};
+
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<CategoryKey | 'all'>('all');
+  const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
 
-  const filteredCalculators = calculators.filter((calc) => {
+  const tools = [
+    ...calculators.map((tool) => ({
+      id: `calc-${tool.slug}`,
+      kind: 'calculator' as const,
+      group: tool.category as FilterKey,
+      badge: CATEGORIES[tool.category].name,
+      name: tool.name,
+      description: tool.seoDescription,
+      href: `/${tool.category}/${tool.slug}`,
+    })),
+    ...pdfTools.map((tool) => ({
+      id: `pdf-${tool.slug}`,
+      kind: 'pdf' as const,
+      group: 'pdf' as FilterKey,
+      badge: 'PDF Studio',
+      name: tool.name,
+      description: tool.tagline,
+      href: `/pdf/${tool.slug}`,
+    })),
+  ];
+
+  const query = searchQuery.trim().toLowerCase();
+  const filteredTools = tools.filter((tool) => {
     const matchesSearch =
-      calc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      calc.seoDescription.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'all' || calc.category === activeCategory;
-    return matchesSearch && matchesCategory;
+      !query ||
+      tool.name.toLowerCase().includes(query) ||
+      tool.description.toLowerCase().includes(query) ||
+      tool.badge.toLowerCase().includes(query);
+    const matchesFilter = activeFilter === 'all' || tool.group === activeFilter;
+    return matchesSearch && matchesFilter;
   });
-
-  const getCategoryColor = (cat: CategoryKey) => {
-    if (cat === 'finance') return 'bg-emerald-500 text-white';
-    if (cat === 'health') return 'bg-rose-500 text-white';
-    if (cat === 'school') return 'bg-indigo-500 text-white';
-    if (cat === 'conversion') return 'bg-teal-500 text-white';
-    return 'bg-amber-500 text-white';
-  };
 
   return (
     <>
       <Header />
 
-      <main className="flex-1 bg-slate-50 py-12">
-        <div className="mx-auto max-w-[1560px] px-4 sm:px-6 lg:px-8">
+      <main className="site-page py-10 md:py-14">
+        <div className="site-container">
           <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
             <aside className="hidden 2xl:block">
-              <AdSlot id="home-left" type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id="home-left" type="sidebar" className="my-0" />
             </aside>
 
             <div className="min-w-0 space-y-8">
-              <section className="bg-white border-b border-slate-100 py-16 md:py-24 rounded-3xl">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-750 font-bold text-xs">
-                    Private calculators and PDF tools
+              <section className="ink-card relative overflow-hidden rounded-[2rem] px-5 py-10 text-white md:px-10 md:py-14">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f2c879]/60 to-transparent" />
+                <div className="mx-auto max-w-4xl text-center">
+                  <div className="eyebrow border-white/15 bg-white/10 text-[#f2c879]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Private calculators and PDF studio
                   </div>
-
-                  <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-850 max-w-3xl mx-auto leading-[1.1]">
-                    Fast everyday tools that work{' '}
-                    <span className="bg-gradient-to-r from-indigo-600 to-emerald-600 bg-clip-text text-transparent">
-                      in your browser
-                    </span>
+                  <h1 className="font-display mx-auto mt-5 max-w-4xl text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
+                    The cleaner way to handle numbers and documents.
                   </h1>
-
-                  <p className="text-slate-500 text-md md:text-lg max-w-xl mx-auto font-medium">
-                    Free calculators for finance, health, school, and conversions, plus private PDF tools to merge, compress, convert, edit, and sign documents. No accounts, no uploads, no paywalls.
+                  <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-8 text-[#d8cbb7] md:text-lg">
+                    Calculate, convert, merge, compress, OCR, edit, and export without account gates or upload-first
+                    workflows. Tallywise is a focused toolbench for real work.
                   </p>
 
-                  <div className="max-w-md mx-auto relative pt-4">
-                    <input
-                      type="text"
-                      placeholder="Search calculators (e.g. paycheck, GPA)..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-5 py-3.5 pl-12 rounded-2xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-medium text-slate-800 shadow-sm text-sm"
-                    />
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      stroke="currentColor"
-                      className="w-5 h-5 text-slate-400 absolute left-4 top-[30px]"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.602 10.602z" />
-                    </svg>
+                  <div className="mx-auto mt-8 max-w-2xl rounded-[1.35rem] border border-white/10 bg-white/10 p-2 shadow-2xl shadow-black/10 backdrop-blur">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#f2c879]" />
+                      <input
+                        type="text"
+                        placeholder="Search tools: edit PDF, paycheck, GPA, compress..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full rounded-2xl border border-white/10 bg-[#fffaf0] py-4 pl-12 pr-4 text-sm font-bold text-[#241c17] outline-none transition placeholder:text-[#9a8c7a] focus:border-[#f2c879]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-7 grid gap-3 text-left sm:grid-cols-3">
+                    {[
+                      { icon: ShieldCheck, label: 'Private by default', text: 'PDF files stay local whenever possible.' },
+                      { icon: Zap, label: 'No fake friction', text: 'Open a tool, use it, download the result.' },
+                      { icon: FileText, label: 'PDF editor focus', text: 'OCR, text replacement, markup, and export.' },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+                        <item.icon className="mb-3 h-5 w-5 text-[#f2c879]" />
+                        <p className="text-sm font-black">{item.label}</p>
+                        <p className="mt-1 text-xs font-semibold leading-5 text-[#d8cbb7]">{item.text}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </section>
 
-              <Link
-                href="/pdf"
-                className="group flex flex-col sm:flex-row items-center justify-between gap-4 rounded-3xl border border-rose-100 bg-gradient-to-r from-rose-50 to-indigo-50 p-6 md:p-8 transition-all hover:shadow-xl hover:shadow-rose-500/5"
-              >
-                <div className="flex items-center gap-4 text-center sm:text-left">
-                  <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-rose-600 shadow-sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-6 w-6">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                    </svg>
-                  </div>
+              <section className="paper-card rounded-[2rem] p-4 md:p-6">
+                <div className="mb-5 flex flex-col justify-between gap-4 md:flex-row md:items-end">
                   <div>
-                    <h2 className="text-lg md:text-xl font-black text-slate-800">
-                      New: <span className="text-rose-600">Free PDF Tools</span>
+                    <p className="eyebrow">Tool library</p>
+                    <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#241c17]">
+                      Pick a task, not a category maze.
                     </h2>
-                    <p className="text-xs md:text-sm font-medium text-slate-500">
-                      Merge, split, compress, convert, edit, and sign PDFs in your browser. Files never upload.
-                    </p>
                   </div>
+                  <p className="max-w-md text-sm font-semibold leading-6 text-[#6f6459]">
+                    {filteredTools.length} tools available. Every card is a direct route to a working calculator or PDF
+                    utility.
+                  </p>
                 </div>
-                <span className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-transform group-hover:translate-x-0.5">
-                  Open PDF Tools
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="h-4 w-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                  </svg>
-                </span>
-              </Link>
 
-              <section className="space-y-8">
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <button
-                    onClick={() => setActiveCategory('all')}
-                    className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
-                      activeCategory === 'all'
-                        ? 'bg-slate-800 text-white shadow-sm'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                    }`}
-                  >
-                    All Categories
-                  </button>
-                  {Object.entries(CATEGORIES).map(([key, value]) => (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {FILTERS.map((filter) => (
                     <button
-                      key={key}
-                      onClick={() => setActiveCategory(key as CategoryKey)}
-                      className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
-                        activeCategory === key
-                          ? 'bg-indigo-650 text-white shadow-sm'
-                          : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                      key={filter.key}
+                      onClick={() => setActiveFilter(filter.key)}
+                      className={`rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.14em] transition ${
+                        activeFilter === filter.key
+                          ? 'border-[#1b2a2f] bg-[#1b2a2f] text-[#f6efe1]'
+                          : 'border-[#dacbb3] bg-[#fffaf0]/80 text-[#5f554d] hover:border-[#b77a22]/40 hover:text-[#241c17]'
                       }`}
                     >
-                      {value.name}
+                      {filter.label}
                     </button>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredCalculators.map((calc) => {
-                    const isInteractive = true;
-
-                    return (
-                      <Link
-                        key={calc.slug}
-                        href={`/${calc.category}/${calc.slug}`}
-                        className="group bg-white rounded-2xl p-6 border border-slate-100 hover:border-indigo-500/20 hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 flex flex-col justify-between"
-                      >
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${getCategoryColor(calc.category)}`}>
-                              {calc.category}
-                            </span>
-                            {isInteractive ? (
-                              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-2 py-0.5 rounded-full">
-                                Live Widget
-                              </span>
-                            ) : (
-                              <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full">
-                                In Verification
-                              </span>
-                            )}
-                          </div>
-
-                          <h3 className="text-md font-bold text-slate-800 group-hover:text-indigo-650 transition-colors">
-                            {calc.name}
-                          </h3>
-
-                          <p className="text-xs text-slate-450 leading-relaxed line-clamp-2 font-medium">
-                            {calc.seoDescription}
-                          </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {filteredTools.map((tool) => (
+                    <Link
+                      key={tool.id}
+                      href={tool.href}
+                      className="tool-card group flex min-h-[190px] flex-col justify-between rounded-[1.5rem] p-5"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className={`rounded-full px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.16em] ${categoryBadge[tool.group]}`}>
+                            {tool.badge}
+                          </span>
+                          {tool.kind === 'pdf' ? (
+                            <FileText className="h-5 w-5 text-[#be123c]" />
+                          ) : (
+                            <Calculator className="h-5 w-5 text-[#b77a22]" />
+                          )}
                         </div>
+                        <h3 className="font-display mt-5 text-2xl font-black leading-tight text-[#241c17]">
+                          {tool.name}
+                        </h3>
+                        <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-[#6f6459]">
+                          {tool.description}
+                        </p>
+                      </div>
+                      <div className="mt-5 flex items-center justify-between border-t border-[#dacbb3] pt-4 text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
+                        <span>{tool.kind === 'pdf' ? 'Open PDF tool' : 'Calculate now'}</span>
+                        <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                      </div>
+                    </Link>
+                  ))}
 
-                        <div className="pt-4 mt-4 border-t border-slate-100 flex justify-between items-center text-xs font-bold text-slate-500 group-hover:text-indigo-650 transition-colors">
-                          <span>Calculate Now</span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={2.5}
-                            stroke="currentColor"
-                            className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                          </svg>
-                        </div>
-                      </Link>
-                    );
-                  })}
-
-                  {filteredCalculators.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-slate-400 font-medium">
-                      No calculators match your search query. Try another term.
+                  {filteredTools.length === 0 && (
+                    <div className="col-span-full rounded-[1.5rem] border border-[#dacbb3] bg-[#fffaf0]/80 p-10 text-center">
+                      <p className="font-display text-2xl font-black text-[#241c17]">No matching tools yet.</p>
+                      <p className="mt-2 text-sm font-semibold text-[#6f6459]">Try a different search term or clear the filter.</p>
                     </div>
                   )}
                 </div>
@@ -194,7 +192,7 @@ export default function Home() {
             </div>
 
             <aside className="hidden 2xl:block">
-              <AdSlot id="home-right" type="sidebar" className="my-0 shadow-xl shadow-slate-200/60" />
+              <AdSlot id="home-right" type="sidebar" className="my-0" />
             </aside>
           </div>
         </div>

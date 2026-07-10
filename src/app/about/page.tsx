@@ -12,44 +12,45 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main className="flex-1 bg-slate-50 py-12">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <div className="bg-white border border-slate-100 rounded-3xl p-8 md:p-12 shadow-sm space-y-8">
-            <div className="space-y-4">
-              <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-600">
-                Our Mission
-              </span>
-              <h1 className="text-3xl md:text-5xl font-black text-slate-800 tracking-tight mt-2">
-                About Tallywise
-              </h1>
-              <p className="text-slate-500 text-md font-medium leading-relaxed">
-                Tallywise.co builds fast, private, zero-friction browser tools for the work people do every day: calculate numbers, clean up PDFs, convert files, and get on with life.
-              </p>
-            </div>
+      <main className="site-page py-10 md:py-14">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <article className="paper-card rounded-[2rem] p-6 md:p-10">
+            <span className="eyebrow">Our mission</span>
+            <h1 className="font-display mt-5 text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
+              Tools should feel calm, fast, and trustworthy.
+            </h1>
+            <p className="mt-5 text-base font-semibold leading-8 text-[#6f6459] md:text-lg">
+              Tallywise builds zero-friction browser tools for the work people do every day: calculate numbers,
+              clean up PDFs, convert files, and get on with life.
+            </p>
 
-            <div className="border-t border-slate-100 pt-8 space-y-6 text-slate-600 font-medium leading-relaxed">
-              <h2 className="text-xl font-bold text-slate-800">Why Tallywise?</h2>
+            <div className="content-prose mt-8 space-y-6 border-t border-[#dacbb3] pt-8 text-sm font-semibold">
+              <h2 className="font-display text-3xl font-black">Why Tallywise?</h2>
               <p>
-                Most online utility sites are cluttered with heavy scripts, upload gates, confusing paywalls, and noisy workflows. We believe everyday tools should be instant, mobile-first, and clear enough to trust.
+                Most online utility sites are cluttered with heavy scripts, upload gates, confusing paywalls, and
+                noisy workflows. We believe everyday tools should be instant, mobile-first, and clear enough to trust.
               </p>
               <p>
-                Our calculators are calibrated against verified formulas and practical reference standards. Our PDF tools run locally in your browser so documents can be merged, compressed, converted, signed, or edited without uploading private files to a server.
+                Our calculators are built around practical formulas and clear inputs. Our PDF tools run locally in
+                your browser whenever possible, so documents can be merged, compressed, converted, signed, or edited
+                without handing private files to a server.
               </p>
 
-              <h2 className="text-xl font-bold text-slate-800">Our Core Principles</h2>
-              <ul className="list-disc pl-6 space-y-3">
-                <li>
-                  <strong className="text-slate-800">Instant Execution:</strong> Tools run directly in the browser wherever possible, with no waiting on an upload queue.
-                </li>
-                <li>
-                  <strong className="text-slate-800">Privacy First:</strong> Your numbers and PDF files are processed locally on your device. We do not store or sell private tool inputs.
-                </li>
-                <li>
-                  <strong className="text-slate-800">Accessibility:</strong> Fully responsive CSS layout designs that scale flawlessly to fit smartphones, tablets, and desktop displays alike.
-                </li>
+              <h2 className="font-display text-3xl font-black">Core principles</h2>
+              <ul className="grid gap-3 pl-0 md:grid-cols-3">
+                {[
+                  ['Instant execution', 'Open the tool and use it. No account wall, no fake waiting room.'],
+                  ['Privacy first', 'Sensitive document work should happen locally whenever the browser can handle it.'],
+                  ['Human formatting', 'Results and workflows should be readable on phones, tablets, and desktops.'],
+                ].map(([title, text]) => (
+                  <li key={title} className="list-none rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/75 p-4">
+                    <strong className="block text-[#241c17]">{title}</strong>
+                    <span className="mt-2 block text-sm leading-6 text-[#6f6459]">{text}</span>
+                  </li>
+                ))}
               </ul>
             </div>
-          </div>
+          </article>
         </div>
       </main>
       <Footer />
