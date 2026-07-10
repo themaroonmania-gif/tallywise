@@ -561,7 +561,11 @@ export function EditPdf() {
       setPages(infos);
     } catch (e) {
       console.error(e);
-      setError('Could not open this PDF. It may be corrupted or password-protected.');
+      // Surface the real failure reason instead of always blaming the file —
+      // most "corrupted" reports turn out to be a browser/worker issue, not
+      // an actually broken PDF, and the generic message hides that.
+      const detail = e instanceof Error ? e.message : String(e);
+      setError(`Could not open this PDF (${detail}). It may be corrupted, password-protected, or this browser may not support a feature this editor needs.`);
       setFile(null);
     } finally {
       setRendering(false);
@@ -644,10 +648,7 @@ export function EditPdf() {
     if ((e.target as HTMLElement).closest('[data-editor-control="true"]')) return;
     const { xPct, yPct } = pct(e.clientX, e.clientY);
 
-    if (tool === 'text' || tool === 'select' || tool === 'editText') {
-      // Tapping any blank spot on the page (not just with the Add text tool
-      // selected) drops a text box right there and starts typing immediately
-      // — the page itself is the canvas, not a fixed set of text boxes.
+    if (tool === 'text') {
       createText(xPct, yPct);
       return;
     }
