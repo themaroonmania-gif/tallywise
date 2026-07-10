@@ -441,7 +441,10 @@ export function EditPdf() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const drafting = useRef<{ id: string; startX: number; startY: number } | null>(null);
-  const dragging = useRef<{ id: string; offX: number; offY: number } | null>(null);
+  const dragging = useRef<{
+    id: string; offX: number; offY: number;
+    startClientX: number; startClientY: number; moved: boolean;
+  } | null>(null);
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
   const textEditHistory = useRef<Set<string>>(new Set());
 
@@ -583,6 +586,10 @@ export function EditPdf() {
 
   const createText = (xPct: number, yPct: number) => {
     const id = uid();
+    // Default the box to reach the right edge of the page (like a normal text
+    // field) instead of a narrow fixed column, so typing wraps naturally
+    // rather than running out of room. It can still be dragged narrower.
+    const wPct = clamp(100 - xPct - 2, 16, 100);
     commitEls((prev) => [
       ...prev,
       {
@@ -591,7 +598,7 @@ export function EditPdf() {
         type: 'text',
         xPct,
         yPct,
-        wPct: 28,
+        wPct,
         text: 'Text',
         fontSizePct: 2.4,
         color: color === '#ffffff' ? '#111827' : color,
@@ -672,12 +679,12 @@ export function EditPdf() {
       const rz = resizing.current;
       setEls((prev) =>
         prev.map((el) => {
-          if (el.id !== rz.id || !elementHasBox(el) || el.type === 'text') return el;
-          return {
-            ...el,
-            wPct: clamp(rz.startW + xPct - rz.startX, 1, 100 - el.xPct),
-            hPct: clamp(rz.startH + yPct - rz.startY, 1, 100 - el.yPct),
-          };
+          if (el.id !== rz.id || !elementHasBox(el)) return el;
+          const wPct = clamp(rz.startW + xPct - rz.startX, 6, 100 - el.xPct);
+          // Plain text boxes only carry a width — their height follows the
+          // wrapped content — so only widen them, don't force a fixed height.
+          if (el.type === 'text') return { ...el, wPct };
+          return { ...el, wPct, hPct: clamp(rz.startH + yPct - rz.startY, 1, 100 - el.yPct) };
         })
       );
       return;
@@ -706,6 +713,14 @@ export function EditPdf() {
 
     if (dragging.current) {
       const dr = dragging.current;
+      // Require a small amount of real movement before treating this as a
+      // drag, so a plain click/tap to select an element never nudges it.
+      if (!dr.moved) {
+        const dist = Math.hypot(e.clientX - dr.startClientX, e.clientY - dr.startClientY);
+        if (dist < 4) return;
+        dr.moved = true;
+        pushHistorySnapshot();
+      }
       setEls((prev) =>
         prev.map((el) => {
           if (el.id !== dr.id || !elementHasBox(el)) return el;
@@ -732,13 +747,17 @@ export function EditPdf() {
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
-    pushHistorySnapshot();
-    dragging.current = { id: el.id, offX: xPct - el.xPct, offY: yPct - el.yPct };
+    // History is only recorded once the pointer actually moves (see
+    // onPointerMove), so a plain click-to-select doesn't pollute undo.
+    dragging.current = {
+      id: el.id, offX: xPct - el.xPct, offY: yPct - el.yPct,
+      startClientX: e.clientX, startClientY: e.clientY, moved: false,
+    };
     overlayRef.current?.setPointerCapture(e.pointerId);
   };
 
   const startResize = (e: React.PointerEvent, el: El) => {
-    if (el.type === 'pen' || el.type === 'text' || !elementHasBox(el)) return;
+    if (el.type === 'pen' || !elementHasBox(el)) return;
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
@@ -1384,11 +1403,14 @@ export function EditPdf() {
                         >
                           {el.text}
                         </div>
-                        {selectedThis && el.type === 'replaceText' && (
+                        {selectedThis && (
                           <span
                             data-editor-control="true"
                             onPointerDown={(e) => startResize(e, el)}
-                            className="absolute bottom-0 right-0 h-4 w-4 cursor-nwse-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
+                            title="Drag to widen"
+                            className={`absolute h-4 w-4 cursor-ew-resize rounded-tl-sm border-l border-t border-rose-500 bg-white ${
+                              el.type === 'replaceText' ? 'bottom-0 right-0 cursor-nwse-resize' : 'right-0 top-1/2 -translate-y-1/2'
+                            }`}
                           />
                         )}
                       </div>

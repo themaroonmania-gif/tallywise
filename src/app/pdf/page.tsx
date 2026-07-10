@@ -3,17 +3,17 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import {
   Combine, Scissors, RotateCw, LayoutGrid, FileMinus, FilePlus, Minimize2,
-  Image as ImageIcon, FileImage, PenLine, Signature, Stamp, Hash, Lock, LockOpen,
-  ShieldCheck, Zap, WifiOff, type LucideIcon,
+  Image as ImageIcon, FileImage, FileText, PenLine, Signature, Stamp, Hash, Lock, LockOpen,
+  ShieldCheck, Zap, WifiOff, ArrowRight, type LucideIcon,
 } from 'lucide-react';
-import { pdfTools, PDF_GROUPS, PdfToolGroup } from '@/config/pdfTools';
+import { pdfTools, getPdfTool, PDF_GROUPS, PdfToolGroup } from '@/config/pdfTools';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
 import { AdSlot } from '@/components/common/AdSlot';
 
 const ICONS: Record<string, LucideIcon> = {
   Combine, Scissors, RotateCw, LayoutGrid, FileMinus, FilePlus, Minimize2,
-  Image: ImageIcon, FileImage, PenLine, Signature, Stamp, Hash, Lock, LockOpen,
+  Image: ImageIcon, FileImage, FileText, PenLine, Signature, Stamp, Hash, Lock, LockOpen,
 };
 
 const GROUP_ACCENT: Record<string, string> = {
@@ -75,9 +75,33 @@ export default function PdfHubPage() {
                 </div>
               </section>
 
+              {(() => {
+                const editPdf = getPdfTool('edit-pdf');
+                if (!editPdf) return null;
+                return (
+                  <Link
+                    href={`/pdf/${editPdf.slug}`}
+                    className="group relative flex flex-col items-start gap-4 overflow-hidden rounded-3xl border border-rose-100 bg-gradient-to-br from-rose-600 to-indigo-650 p-8 text-white shadow-xl shadow-rose-500/10 transition-transform hover:-translate-y-0.5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="space-y-2">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider">
+                        Most popular
+                      </span>
+                      <h2 className="text-2xl md:text-3xl font-black tracking-tight">Edit PDF</h2>
+                      <p className="max-w-md text-sm font-medium text-white/85">
+                        Click anywhere on the page to add text, drop in images, highlight, draw, and more — no watermark, ever.
+                      </p>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-rose-600 shadow-md transition-colors group-hover:bg-rose-50">
+                      Open editor <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </Link>
+                );
+              })()}
+
               {groupOrder.map((groupKey) => {
                 const group = PDF_GROUPS[groupKey];
-                const tools = pdfTools.filter((t) => t.group === groupKey);
+                const tools = pdfTools.filter((t) => t.group === groupKey && t.slug !== 'edit-pdf');
                 if (!tools.length) return null;
                 return (
                   <section key={groupKey} className="space-y-4">
