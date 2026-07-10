@@ -316,6 +316,58 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
   });
 }
 
+const DEFAULT_TEXT_COLOR = '#111827';
+
+/**
+ * Approximates the original ink color of a detected text line by sampling
+ * the darkest pixel inside its bounding box on the rendered page image —
+ * so replacing text keeps looking like the source instead of always
+ * turning near-black, regardless of whether it came from the PDF's text
+ * layer or from OCR on a scanned page.
+ */
+function sampleTextColor(
+  imageUrl: string,
+  box: { xPct: number; yPct: number; wPct: number; hPct: number }
+): Promise<string> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return resolve(DEFAULT_TEXT_COLOR);
+
+        ctx.drawImage(image, 0, 0);
+        const x = clamp(Math.round((box.xPct / 100) * canvas.width), 0, canvas.width - 1);
+        const y = clamp(Math.round((box.yPct / 100) * canvas.height), 0, canvas.height - 1);
+        const w = clamp(Math.round((box.wPct / 100) * canvas.width), 1, canvas.width - x);
+        const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
+        const { data } = ctx.getImageData(x, y, w, h);
+
+        let bestR = 17, bestG = 24, bestB = 39, bestLuminance = Infinity;
+        for (let i = 0; i < data.length; i += 4) {
+          const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+          if (a < 200) continue;
+          const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+          if (luminance < bestLuminance) {
+            bestLuminance = luminance;
+            bestR = r; bestG = g; bestB = b;
+          }
+        }
+
+        const toHex = (n: number) => n.toString(16).padStart(2, '0');
+        resolve(`#${toHex(bestR)}${toHex(bestG)}${toHex(bestB)}`);
+      } catch {
+        resolve(DEFAULT_TEXT_COLOR);
+      }
+    };
+    image.onerror = () => resolve(DEFAULT_TEXT_COLOR);
+    image.src = imageUrl;
+  });
+}
+
 function ocrBlocksToTextBoxes(blocks: OcrBlock[] | null | undefined, pageIndex: number, width: number, height: number) {
   const boxes: PdfTextBox[] = [];
 
@@ -453,6 +505,7 @@ export function EditPdf() {
   } | null>(null);
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
   const textEditHistory = useRef<Set<string>>(new Set());
+  const autoOcrAttempted = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     const node = overlayRef.current;
@@ -547,6 +600,7 @@ export function EditPdf() {
     setOcrStatus(null);
     setZoom(1);
     textEditHistory.current.clear();
+    autoOcrAttempted.current.clear();
 
     try {
       const data = await f.arrayBuffer();
@@ -636,6 +690,8 @@ export function EditPdf() {
     }
 
     const id = uid();
+    // Placeholder color while sampling, so the box appears instantly instead
+    // of waiting on the async color sample before selection/focus can happen.
     commitEls((prev) => [
       ...prev,
       {
@@ -649,12 +705,21 @@ export function EditPdf() {
         hPct: box.hPct,
         text: box.text,
         fontSizePct: box.fontSizePct,
-        color: '#111827',
+        color: DEFAULT_TEXT_COLOR,
       },
     ]);
     setSelected({ kind: 'element', id });
     setFocusElementId(id);
     setTool('select');
+
+    // Match the original text's color instead of always defaulting to
+    // near-black, so editing a line doesn't change how it looks.
+    const pageUrl = page?.url;
+    if (pageUrl) {
+      sampleTextColor(pageUrl, box).then((sampledColor) => {
+        updateEl(id, (el) => (el.type === 'replaceText' ? { ...el, color: sampledColor } : el));
+      });
+    }
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -839,10 +904,10 @@ export function EditPdf() {
     }
   };
 
-  const runOcrOnCurrentPage = async () => {
+  const runOcrOnCurrentPage = async (auto = false) => {
     if (!page || ocrStatus) return;
 
-    setError(null);
+    if (!auto) setError(null);
     setOcrStatus({ page: current, label: 'Loading OCR engine', progress: 0 });
 
     let worker: OcrWorker | null = null;
@@ -874,7 +939,9 @@ export function EditPdf() {
       const boxes = ocrBlocksToTextBoxes(result.data.blocks, current, page.w, page.h);
 
       if (!boxes.length) {
-        setError('OCR did not find readable text on this page. Try a sharper scan, or use Erase + Text manually.');
+        // A page can legitimately have no text at all (a photo, a divider) —
+        // only bother the user about it when they asked for OCR explicitly.
+        if (!auto) setError('OCR did not find readable text on this page. Try a sharper scan, or use Erase + Text manually.');
         return;
       }
 
@@ -891,15 +958,28 @@ export function EditPdf() {
             : info
         )
       );
-      setTool('editText');
+      if (!auto) setTool('editText');
     } catch (e) {
       console.error(e);
-      setError('OCR could not read this page. Try a clearer scan, or use Erase + Text manually.');
+      if (!auto) setError('OCR could not read this page. Try a clearer scan, or use Erase + Text manually.');
     } finally {
       await worker?.terminate().catch(() => undefined);
       setOcrStatus(null);
     }
   };
+
+  // Scanned pages have no PDF text layer at all, so they'd otherwise sit
+  // there uneditable until someone thinks to press the OCR button. Run it
+  // automatically, once per page, the moment we land on a page with nothing
+  // detected — silently, so a genuinely image-only page doesn't nag anyone.
+  useEffect(() => {
+    if (!page || ocrStatus) return;
+    if (page.textBoxes.length > 0) return;
+    if (autoOcrAttempted.current.has(current)) return;
+    autoOcrAttempted.current.add(current);
+    void runOcrOnCurrentPage(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, current, ocrStatus]);
 
   const exportPdf = async () => {
     if (!file) return;
@@ -1020,6 +1100,7 @@ export function EditPdf() {
     setTool('editText');
     setZoom(1);
     textEditHistory.current.clear();
+    autoOcrAttempted.current.clear();
   };
 
   const handleEditorShortcut = useEffectEvent((event: KeyboardEvent) => {
@@ -1192,7 +1273,7 @@ export function EditPdf() {
 
             <button
               type="button"
-              onClick={runOcrOnCurrentPage}
+              onClick={() => runOcrOnCurrentPage()}
               disabled={Boolean(ocrStatus)}
               title="OCR this page"
               aria-label="OCR this page"
