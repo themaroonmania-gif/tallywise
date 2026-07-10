@@ -306,6 +306,27 @@ export const pdfTools: PdfToolDef[] = [
     relatedSlugs: ['pdf-to-text', 'edit-pdf', 'merge-pdf'],
     status: 'live',
   },
+  {
+    slug: 'pdf-to-word',
+    name: 'PDF to Word',
+    group: 'convert',
+    iconName: 'FileText',
+    seoTitle: 'PDF to Word Online Free - Convert PDF to a .docx File',
+    seoDescription: 'Convert a PDF into an editable Word (.docx) document for free, entirely in your browser. No uploads, no watermark.',
+    h1: 'Convert PDF to Word',
+    tagline: 'Turn a PDF into an editable .docx file you can open in Word or Google Docs.',
+    explainerHtml: `
+      ${PRIVACY_NOTE}
+      <h3>How to convert PDF to Word</h3>
+      <p>Upload your PDF and Tallywise pulls the text from every page and packages it into a standard .docx file, with a page break between each original page.</p>
+    `,
+    faqs: [
+      { question: 'Will the formatting match the original PDF exactly?', answer: 'This conversion focuses on getting the text into an editable document rather than pixel-perfect layout, so complex formatting like multi-column text or tables may need light cleanup afterward.' },
+      { question: 'Does this work on scanned PDFs?', answer: 'Only if the PDF already has a text layer. For scanned pages, first run OCR using the Edit PDF tool, then use PDF to Text or PDF to Word on the result.' },
+    ],
+    relatedSlugs: ['pdf-to-text', 'text-to-pdf', 'edit-pdf'],
+    status: 'live',
+  },
 
   // ---------- EDIT & SIGN ----------
   {

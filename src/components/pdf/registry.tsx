@@ -15,6 +15,7 @@ import { SignPdf } from './tools/SignPdf';
 import { EditPdf } from './tools/EditPdf';
 import { PdfToText } from './tools/PdfToText';
 import { TextToPdf } from './tools/TextToPdf';
+import { PdfToWord } from './tools/PdfToWord';
 
 // Maps a PDF tool slug to its interactive component. Tools not yet listed here
 // fall back to the ComingSoon panel, so the whole catalog can be published for
@@ -36,6 +37,7 @@ export const pdfToolComponents: Record<string, React.ComponentType> = {
   'edit-pdf': EditPdf,
   'pdf-to-text': PdfToText,
   'text-to-pdf': TextToPdf,
+  'pdf-to-word': PdfToWord,
 };
 
 export function ComingSoonPdfTool({ name }: { name: string }) {
