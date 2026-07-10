@@ -442,7 +442,7 @@ export function EditPdf() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const drafting = useRef<{ id: string; startX: number; startY: number } | null>(null);
   const dragging = useRef<{
-    id: string; offX: number; offY: number;
+    id: string; type: El['type']; offX: number; offY: number;
     startClientX: number; startClientY: number; moved: boolean;
   } | null>(null);
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
@@ -644,7 +644,10 @@ export function EditPdf() {
     if ((e.target as HTMLElement).closest('[data-editor-control="true"]')) return;
     const { xPct, yPct } = pct(e.clientX, e.clientY);
 
-    if (tool === 'text') {
+    if (tool === 'text' || tool === 'select' || tool === 'editText') {
+      // Tapping any blank spot on the page (not just with the Add text tool
+      // selected) drops a text box right there and starts typing immediately
+      // — the page itself is the canvas, not a fixed set of text boxes.
       createText(xPct, yPct);
       return;
     }
@@ -737,6 +740,12 @@ export function EditPdf() {
   };
 
   const onPointerUp = () => {
+    // A plain click (no real drag) on a text element means "start typing",
+    // not "get ready to move it" — dragging is reserved for an actual drag.
+    if (dragging.current && !dragging.current.moved &&
+        (dragging.current.type === 'text' || dragging.current.type === 'replaceText')) {
+      setFocusElementId(dragging.current.id);
+    }
     drafting.current = null;
     dragging.current = null;
     resizing.current = null;
@@ -750,7 +759,7 @@ export function EditPdf() {
     // History is only recorded once the pointer actually moves (see
     // onPointerMove), so a plain click-to-select doesn't pollute undo.
     dragging.current = {
-      id: el.id, offX: xPct - el.xPct, offY: yPct - el.yPct,
+      id: el.id, type: el.type, offX: xPct - el.xPct, offY: yPct - el.yPct,
       startClientX: e.clientX, startClientY: e.clientY, moved: false,
     };
     overlayRef.current?.setPointerCapture(e.pointerId);
