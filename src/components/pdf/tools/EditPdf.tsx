@@ -261,31 +261,37 @@ async function extractTextBoxes(data: ArrayBuffer, scale: number): Promise<PdfTe
   const pages: PdfTextBox[][] = [];
 
   for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
-    const page = await doc.getPage(pageNumber);
-    const viewport = page.getViewport({ scale });
-    const content = await page.getTextContent();
-    const rawRuns: RawTextRun[] = [];
+    try {
+      const page = await doc.getPage(pageNumber);
+      const viewport = page.getViewport({ scale });
+      const content = await page.getTextContent();
+      const rawRuns: RawTextRun[] = [];
 
-    for (const item of content.items) {
-      if (!isPdfTextItem(item) || !item.str.trim()) continue;
-      const transform = util.transform(viewport.transform, item.transform);
-      const fontSize = Math.max(Math.hypot(transform[2], transform[3]), Math.abs(item.height || 0) * scale, 6);
-      const width = Math.max(Math.abs(item.width || 0) * scale, Math.abs(transform[0] || 0), 1);
-      const left = transform[4];
-      const top = transform[5] - fontSize;
+      for (const item of content.items ?? []) {
+        if (!isPdfTextItem(item) || !item.str.trim()) continue;
+        const transform = util.transform(viewport.transform, item.transform);
+        const fontSize = Math.max(Math.hypot(transform[2], transform[3]), Math.abs(item.height || 0) * scale, 6);
+        const width = Math.max(Math.abs(item.width || 0) * scale, Math.abs(transform[0] || 0), 1);
+        const left = transform[4];
+        const top = transform[5] - fontSize;
 
-      rawRuns.push({
-        text: item.str,
-        left,
-        top,
-        right: left + width,
-        bottom: top + fontSize * 1.1,
-        fontSize,
-        hasEOL: Boolean(item.hasEOL),
-      });
+        rawRuns.push({
+          text: item.str,
+          left,
+          top,
+          right: left + width,
+          bottom: top + fontSize * 1.1,
+          fontSize,
+          hasEOL: Boolean(item.hasEOL),
+        });
+      }
+
+      pages.push(buildTextLines(rawRuns, pageNumber - 1, viewport.width, viewport.height));
+    } catch (e) {
+      // One page's text layer failing to parse shouldn't take down the rest.
+      console.error(`Text detection failed on page ${pageNumber}, continuing without it:`, e);
+      pages.push([]);
     }
-
-    pages.push(buildTextLines(rawRuns, pageNumber - 1, viewport.width, viewport.height));
   }
 
   await doc.cleanup();
@@ -544,9 +550,16 @@ export function EditPdf() {
 
     try {
       const data = await f.arrayBuffer();
+      // Detecting existing text lines is a bonus feature layered on top of
+      // rendering the page images. If it fails on some browser/PDF, the
+      // editor should still open with plain image pages (just without
+      // click-to-edit-detected-text) rather than refusing to open at all.
       const [rendered, textBoxes] = await Promise.all([
         renderPdfPages(data.slice(0), PREVIEW_SCALE),
-        extractTextBoxes(data.slice(0), PREVIEW_SCALE),
+        extractTextBoxes(data.slice(0), PREVIEW_SCALE).catch((e) => {
+          console.error('Text detection failed, continuing without it:', e);
+          return [] as PdfTextBox[][];
+        }),
       ]);
       const infos: RenderedPageInfo[] = [];
       for (const p of rendered) {
