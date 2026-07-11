@@ -43,6 +43,27 @@ import { baseName } from '@/lib/pdfUtils';
 
 type Tool = 'select' | 'editText' | 'text' | 'whiteout' | 'highlight' | 'rect' | 'pen' | 'image';
 type RectTool = 'whiteout' | 'highlight' | 'rect';
+type FontStyle = 'normal' | 'italic';
+type PdfFontKey =
+  | 'helvetica'
+  | 'helveticaBold'
+  | 'helveticaOblique'
+  | 'helveticaBoldOblique'
+  | 'times'
+  | 'timesBold'
+  | 'timesItalic'
+  | 'timesBoldItalic'
+  | 'courier'
+  | 'courierBold'
+  | 'courierOblique'
+  | 'courierBoldOblique';
+
+interface TextAppearance {
+  fontFamily: string;
+  fontWeight: number;
+  fontStyle: FontStyle;
+  pdfFontKey: PdfFontKey;
+}
 
 interface Pt {
   xPct: number;
@@ -58,6 +79,10 @@ interface PdfTextBox {
   wPct: number;
   hPct: number;
   fontSizePct: number;
+  fontFamily: string;
+  fontWeight: number;
+  fontStyle: FontStyle;
+  pdfFontKey: PdfFontKey;
 }
 
 interface RenderedPageInfo {
@@ -84,6 +109,10 @@ type El =
       text: string;
       fontSizePct: number;
       color: string;
+      fontFamily: string;
+      fontWeight: number;
+      fontStyle: FontStyle;
+      pdfFontKey: PdfFontKey;
     }
   | {
       id: string;
@@ -98,6 +127,10 @@ type El =
       fontSizePct: number;
       color: string;
       backgroundColor: string;
+      fontFamily: string;
+      fontWeight: number;
+      fontStyle: FontStyle;
+      pdfFontKey: PdfFontKey;
     }
   | {
       id: string;
@@ -136,6 +169,7 @@ interface PdfTextItem {
   width: number;
   height: number;
   hasEOL?: boolean;
+  fontName?: string;
 }
 
 interface RawTextRun {
@@ -146,6 +180,10 @@ interface RawTextRun {
   bottom: number;
   fontSize: number;
   hasEOL: boolean;
+  fontFamily: string;
+  fontWeight: number;
+  fontStyle: FontStyle;
+  pdfFontKey: PdfFontKey;
 }
 
 interface OcrLine {
@@ -197,6 +235,37 @@ function hexToRgb(hex: string) {
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 }
 
+function inferTextAppearance(fontName?: string, fontFamily?: string): TextAppearance {
+  const descriptor = `${fontName ?? ''} ${fontFamily ?? ''}`.toLowerCase();
+  const isBold = /(bold|black|heavy|semibold|semi-bold|demi|medium)/.test(descriptor);
+  const isItalic = /(italic|oblique)/.test(descriptor);
+
+  if (/(courier|mono|consolas|menlo|monaco)/.test(descriptor)) {
+    return {
+      fontFamily: '"Courier New", Courier, monospace',
+      fontWeight: isBold ? 700 : 400,
+      fontStyle: isItalic ? 'italic' : 'normal',
+      pdfFontKey: isBold && isItalic ? 'courierBoldOblique' : isBold ? 'courierBold' : isItalic ? 'courierOblique' : 'courier',
+    };
+  }
+
+  if (/(times|serif|georgia|garamond|cambria)/.test(descriptor)) {
+    return {
+      fontFamily: '"Times New Roman", Times, serif',
+      fontWeight: isBold ? 700 : 400,
+      fontStyle: isItalic ? 'italic' : 'normal',
+      pdfFontKey: isBold && isItalic ? 'timesBoldItalic' : isBold ? 'timesBold' : isItalic ? 'timesItalic' : 'times',
+    };
+  }
+
+  return {
+    fontFamily: 'Helvetica, Arial, sans-serif',
+    fontWeight: isBold ? 700 : 400,
+    fontStyle: isItalic ? 'italic' : 'normal',
+    pdfFontKey: isBold && isItalic ? 'helveticaBoldOblique' : isBold ? 'helveticaBold' : isItalic ? 'helveticaOblique' : 'helvetica',
+  };
+}
+
 function isPdfTextItem(item: unknown): item is PdfTextItem {
   if (!item || typeof item !== 'object') return false;
   const maybe = item as Partial<PdfTextItem>;
@@ -235,6 +304,7 @@ function buildTextLines(rawRuns: RawTextRun[], page: number, pageWidth: number, 
     const right = Math.max(...sorted.map((run) => run.right));
     const bottom = Math.max(...sorted.map((run) => run.bottom));
     const fontSize = sorted.reduce((sum, run) => sum + run.fontSize, 0) / sorted.length;
+    const styleRun = sorted.reduce((best, run) => (run.text.length > best.text.length ? run : best), sorted[0]);
     const text = sorted.reduce((acc, run, index) => {
       if (index === 0) return run.text;
       const previous = sorted[index - 1];
@@ -253,6 +323,10 @@ function buildTextLines(rawRuns: RawTextRun[], page: number, pageWidth: number, 
       wPct: (clamp(right - left + padX * 2, 1, pageWidth) / pageWidth) * 100,
       hPct: (clamp(bottom - top + padY * 2, 1, pageHeight) / pageHeight) * 100,
       fontSizePct: clamp((fontSize / pageHeight) * 100, 0.7, 8),
+      fontFamily: styleRun.fontFamily,
+      fontWeight: styleRun.fontWeight,
+      fontStyle: styleRun.fontStyle,
+      pdfFontKey: styleRun.pdfFontKey,
     };
   });
 }
@@ -268,10 +342,12 @@ async function extractTextBoxes(data: ArrayBuffer, scale: number): Promise<PdfTe
       const page = await doc.getPage(pageNumber);
       const viewport = page.getViewport({ scale });
       const content = await page.getTextContent();
+      const styles = (content as { styles?: Record<string, { fontFamily?: string }> }).styles ?? {};
       const rawRuns: RawTextRun[] = [];
 
       for (const item of content.items ?? []) {
         if (!isPdfTextItem(item) || !item.str.trim()) continue;
+        const appearance = inferTextAppearance(item.fontName, item.fontName ? styles[item.fontName]?.fontFamily : undefined);
         const transform = util.transform(viewport.transform, item.transform);
         const fontSize = Math.max(Math.hypot(transform[2], transform[3]), Math.abs(item.height || 0) * scale, 6);
         const width = Math.max(Math.abs(item.width || 0) * scale, Math.abs(transform[0] || 0), 1);
@@ -286,6 +362,7 @@ async function extractTextBoxes(data: ArrayBuffer, scale: number): Promise<PdfTe
           bottom: top + fontSize * 1.1,
           fontSize,
           hasEOL: Boolean(item.hasEOL),
+          ...appearance,
         });
       }
 
@@ -321,6 +398,21 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
 
 const DEFAULT_TEXT_COLOR = '#111827';
 const DEFAULT_PAGE_COLOR = '#ffffff';
+const DEFAULT_TEXT_APPEARANCE: TextAppearance = inferTextAppearance();
+const STANDARD_FONT_BY_KEY: Record<PdfFontKey, StandardFonts> = {
+  helvetica: StandardFonts.Helvetica,
+  helveticaBold: StandardFonts.HelveticaBold,
+  helveticaOblique: StandardFonts.HelveticaOblique,
+  helveticaBoldOblique: StandardFonts.HelveticaBoldOblique,
+  times: StandardFonts.TimesRoman,
+  timesBold: StandardFonts.TimesRomanBold,
+  timesItalic: StandardFonts.TimesRomanItalic,
+  timesBoldItalic: StandardFonts.TimesRomanBoldItalic,
+  courier: StandardFonts.Courier,
+  courierBold: StandardFonts.CourierBold,
+  courierOblique: StandardFonts.CourierOblique,
+  courierBoldOblique: StandardFonts.CourierBoldOblique,
+};
 
 /**
  * Approximates the original ink color of a detected text line by sampling
@@ -391,26 +483,41 @@ function sampleBackgroundColor(
         const y = clamp(Math.round((box.yPct / 100) * canvas.height), 0, canvas.height - 1);
         const w = clamp(Math.round((box.wPct / 100) * canvas.width), 1, canvas.width - x);
         const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
-        const samplePad = Math.max(4, Math.round(Math.min(w, h) * 0.25));
+        const samplePad = Math.max(6, Math.round(Math.min(w, h) * 0.55));
         const sx = clamp(x - samplePad, 0, canvas.width - 1);
         const sy = clamp(y - samplePad, 0, canvas.height - 1);
         const sw = clamp(w + samplePad * 2, 1, canvas.width - sx);
         const sh = clamp(h + samplePad * 2, 1, canvas.height - sy);
         const { data } = ctx.getImageData(sx, sy, sw, sh);
 
-        let bestR = 255, bestG = 255, bestB = 255, bestScore = -Infinity;
-        for (let i = 0; i < data.length; i += 16) {
-          const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
-          if (a < 200) continue;
-          const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-          const neutrality = 255 - (Math.max(r, g, b) - Math.min(r, g, b));
-          const score = luminance + neutrality * 0.25;
-          if (score > bestScore) {
-            bestScore = score;
-            bestR = r; bestG = g; bestB = b;
+        const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
+        const step = Math.max(1, Math.floor(Math.sqrt((sw * sh) / 7000)));
+
+        for (let yy = 0; yy < sh; yy += step) {
+          for (let xx = 0; xx < sw; xx += step) {
+            const absoluteX = sx + xx;
+            const absoluteY = sy + yy;
+            if (absoluteX >= x && absoluteX < x + w && absoluteY >= y && absoluteY < y + h) continue;
+
+            const i = (yy * sw + xx) * 4;
+            const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+            if (a < 200) continue;
+
+            const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
+            const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
+            bucket.count += 1;
+            bucket.r += r;
+            bucket.g += g;
+            bucket.b += b;
+            buckets.set(key, bucket);
           }
         }
 
+        let best = [...buckets.values()].sort((a, b) => b.count - a.count)[0];
+        if (!best) best = { count: 1, r: 255, g: 255, b: 255 };
+        const bestR = Math.round(best.r / best.count);
+        const bestG = Math.round(best.g / best.count);
+        const bestB = Math.round(best.b / best.count);
         const toHex = (n: number) => n.toString(16).padStart(2, '0');
         resolve(`#${toHex(bestR)}${toHex(bestG)}${toHex(bestB)}`);
       } catch {
@@ -453,6 +560,7 @@ function ocrBlocksToTextBoxes(blocks: OcrBlock[] | null | undefined, pageIndex: 
           wPct: ((right - left) / width) * 100,
           hPct: ((bottom - top) / height) * 100,
           fontSizePct: clamp((lineHeight / height) * 100 * 0.78, 0.7, 8),
+          ...DEFAULT_TEXT_APPEARANCE,
         });
       });
     });
@@ -727,6 +835,7 @@ export function EditPdf() {
         text: 'Text',
         fontSizePct: 2.4,
         color: color === '#ffffff' ? '#111827' : color,
+        ...DEFAULT_TEXT_APPEARANCE,
       },
     ]);
     setSelected({ kind: 'element', id });
@@ -761,6 +870,10 @@ export function EditPdf() {
         fontSizePct: box.fontSizePct,
         color: DEFAULT_TEXT_COLOR,
         backgroundColor: DEFAULT_PAGE_COLOR,
+        fontFamily: box.fontFamily,
+        fontWeight: box.fontWeight,
+        fontStyle: box.fontStyle,
+        pdfFontKey: box.pdfFontKey,
       },
     ]);
     setSelected({ kind: 'element', id });
@@ -1090,7 +1203,15 @@ export function EditPdf() {
 
     try {
       const doc = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
-      const font = await doc.embedFont(StandardFonts.Helvetica);
+      const embeddedFonts: Partial<Record<PdfFontKey, PDFFont>> = {};
+      const getFont = async (fontKey: PdfFontKey) => {
+        let font = embeddedFonts[fontKey];
+        if (!font) {
+          font = await doc.embedFont(STANDARD_FONT_BY_KEY[fontKey]);
+          embeddedFonts[fontKey] = font;
+        }
+        return font;
+      };
       const docPages = doc.getPages();
 
       for (const el of els) {
@@ -1115,6 +1236,7 @@ export function EditPdf() {
 
           if (el.type === 'replaceText') {
             const size = (el.fontSizePct / 100) * H;
+            const font = await getFont(el.pdfFontKey);
             drawTextBlock({
               page: pdfPage,
               font,
@@ -1130,6 +1252,7 @@ export function EditPdf() {
           }
         } else if (el.type === 'text') {
           const size = (el.fontSizePct / 100) * H;
+          const font = await getFont(el.pdfFontKey);
           drawTextBlock({
             page: pdfPage,
             font,
@@ -1630,9 +1753,12 @@ export function EditPdf() {
                           backgroundColor: el.type === 'replaceText' ? el.backgroundColor : 'transparent',
                           color: el.color,
                           fontSize,
+                          fontFamily: el.fontFamily,
+                          fontWeight: el.fontWeight,
+                          fontStyle: el.fontStyle,
                           outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
                         }}
-                        className="absolute cursor-text overflow-hidden whitespace-pre-wrap px-[1px] font-semibold leading-tight"
+                        className="absolute cursor-text overflow-hidden whitespace-pre-wrap px-[1px] leading-tight"
                       >
                         <div
                           data-editable-id={el.id}
