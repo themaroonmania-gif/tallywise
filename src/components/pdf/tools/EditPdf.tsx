@@ -1616,7 +1616,12 @@ export function EditPdf() {
                       <div
                         key={el.id}
                         data-editor-control="true"
-                        onPointerDown={(e) => startDrag(e, el)}
+                        onPointerDown={(e) => {
+                          e.stopPropagation();
+                          setSelected({ kind: 'element', id: el.id });
+                          setFocusElementId(el.id);
+                          setTool('select');
+                        }}
                         style={{
                           left: `${el.xPct}%`,
                           top: `${el.yPct}%`,
@@ -1627,7 +1632,7 @@ export function EditPdf() {
                           fontSize,
                           outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
                         }}
-                        className="absolute cursor-move overflow-hidden whitespace-pre-wrap px-[1px] font-semibold leading-tight"
+                        className="absolute cursor-text overflow-hidden whitespace-pre-wrap px-[1px] font-semibold leading-tight"
                       >
                         <div
                           data-editable-id={el.id}
@@ -1635,7 +1640,12 @@ export function EditPdf() {
                           suppressContentEditableWarning
                           onBlur={() => textEditHistory.current.delete(el.id)}
                           onPointerDown={(e) => {
-                            if (selectedThis) e.stopPropagation();
+                            e.stopPropagation();
+                            if (!selectedThis) {
+                              setSelected({ kind: 'element', id: el.id });
+                              setFocusElementId(el.id);
+                              setTool('select');
+                            }
                           }}
                           onInput={(e) => {
                             if (!textEditHistory.current.has(el.id)) {
@@ -1649,19 +1659,29 @@ export function EditPdf() {
                                 : currentEl
                             );
                           }}
-                          className="min-h-[1em] outline-none"
+                          className="min-h-[1em] w-full outline-none"
                         >
                           {el.text}
                         </div>
                         {selectedThis && (
-                          <span
-                            data-editor-control="true"
-                            onPointerDown={(e) => startResize(e, el)}
-                            title="Drag to widen"
-                            className={`absolute h-4 w-4 cursor-ew-resize rounded-tl-sm border-l border-t border-rose-500 bg-white ${
-                              el.type === 'replaceText' ? 'bottom-0 right-0 cursor-nwse-resize' : 'right-0 top-1/2 -translate-y-1/2'
-                            }`}
-                          />
+                          <>
+                            <span
+                              data-editor-control="true"
+                              onPointerDown={(e) => startDrag(e, el)}
+                              title="Drag to move"
+                              className="absolute left-1 top-1 flex h-4 w-4 cursor-move items-center justify-center rounded-full border border-rose-500 bg-white text-[8px] font-black leading-none text-rose-600 shadow-sm"
+                            >
+                              +
+                            </span>
+                            <span
+                              data-editor-control="true"
+                              onPointerDown={(e) => startResize(e, el)}
+                              title="Drag to widen"
+                              className={`absolute h-4 w-4 cursor-ew-resize rounded-tl-sm border-l border-t border-rose-500 bg-white ${
+                                el.type === 'replaceText' ? 'bottom-0 right-0 cursor-nwse-resize' : 'right-0 top-1/2 -translate-y-1/2'
+                              }`}
+                            />
+                          </>
                         )}
                       </div>
                     );
