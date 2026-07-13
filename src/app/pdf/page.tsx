@@ -94,7 +94,7 @@ export default function PdfHubPage() {
                     Files stay in your browser
                   </div>
                   <h1 className="font-display mx-auto mt-5 max-w-4xl text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
-                    A PDF studio that feels fast enough to trust.
+                    Every PDF tool you need. Nothing uploaded, ever.
                   </h1>
                   <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-8 text-[#d8cbb7] md:text-lg">
                     Merge, split, compress, convert, OCR, edit, and sign documents without account walls or upload-first

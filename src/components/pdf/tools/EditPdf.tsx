@@ -282,13 +282,23 @@ function buildTextLines(rawRuns: RawTextRun[], page: number, pageWidth: number, 
   for (const run of runs) {
     const lastLine = lines[lines.length - 1];
     const lastRun = lastLine?.[lastLine.length - 1];
-    const centerY = (run.top + run.bottom) / 2;
-    const lastCenterY = lastRun ? (lastRun.top + lastRun.bottom) / 2 : 0;
-    const sameBaseline = lastRun
-      ? Math.abs(centerY - lastCenterY) <= Math.max(4, Math.min(run.fontSize, lastRun.fontSize) * 0.45)
-      : false;
+
+    // Two runs belong to the same visual line only if their vertical extents
+    // substantially overlap — robust to different font sizes within one line
+    // (e.g. superscripts) while reliably keeping two genuinely different
+    // lines apart even when tightly spaced. A simple "centers within N px"
+    // check (the previous approach) could misfire on single-spaced text and
+    // merge adjacent lines together.
+    let sameLine = false;
+    if (lastRun) {
+      const overlapTop = Math.max(run.top, lastRun.top);
+      const overlapBottom = Math.min(run.bottom, lastRun.bottom);
+      const overlap = overlapBottom - overlapTop;
+      const shorterHeight = Math.min(run.bottom - run.top, lastRun.bottom - lastRun.top);
+      sameLine = shorterHeight > 0 && overlap / shorterHeight >= 0.5;
+    }
     const gap = lastRun ? run.left - lastRun.right : 0;
-    const sameSentence = sameBaseline && gap <= Math.max(28, run.fontSize * 3.2);
+    const sameSentence = sameLine && gap <= Math.max(28, run.fontSize * 3.2);
 
     if (!lastLine || !lastRun || !sameSentence || lastRun.hasEOL) {
       lines.push([run]);
@@ -464,6 +474,21 @@ function sampleTextColor(
   });
 }
 
+/**
+ * Approximates the background color behind a detected text line by finding
+ * the most common color strictly *inside* its own bounding box — background
+ * pixels vastly outnumber glyph-ink pixels in a tight line box, so the
+ * dominant color reliably wins.
+ *
+ * Earlier this sampled a padded ring *around* the box instead, on the theory
+ * that avoiding the box's own ink pixels would give a cleaner read. In
+ * practice that ring routinely overlapped the line directly above/below
+ * (real documents are rarely spaced far enough apart for a padding ring to
+ * clear neighboring lines), so it would average in ink from an unrelated
+ * line and return a visibly wrong color. Sampling inside the box avoids that
+ * failure mode entirely, at the cost of needing to filter out ink pixels by
+ * luminance instead of by position.
+ */
 function sampleBackgroundColor(
   imageUrl: string,
   box: { xPct: number; yPct: number; wPct: number; hPct: number }
@@ -483,34 +508,23 @@ function sampleBackgroundColor(
         const y = clamp(Math.round((box.yPct / 100) * canvas.height), 0, canvas.height - 1);
         const w = clamp(Math.round((box.wPct / 100) * canvas.width), 1, canvas.width - x);
         const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
-        const samplePad = Math.max(6, Math.round(Math.min(w, h) * 0.55));
-        const sx = clamp(x - samplePad, 0, canvas.width - 1);
-        const sy = clamp(y - samplePad, 0, canvas.height - 1);
-        const sw = clamp(w + samplePad * 2, 1, canvas.width - sx);
-        const sh = clamp(h + samplePad * 2, 1, canvas.height - sy);
-        const { data } = ctx.getImageData(sx, sy, sw, sh);
+        const { data } = ctx.getImageData(x, y, w, h);
 
         const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
-        const step = Math.max(1, Math.floor(Math.sqrt((sw * sh) / 7000)));
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+          if (a < 200) continue;
 
-        for (let yy = 0; yy < sh; yy += step) {
-          for (let xx = 0; xx < sw; xx += step) {
-            const absoluteX = sx + xx;
-            const absoluteY = sy + yy;
-            if (absoluteX >= x && absoluteX < x + w && absoluteY >= y && absoluteY < y + h) continue;
-
-            const i = (yy * sw + xx) * 4;
-            const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
-            if (a < 200) continue;
-
-            const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
-            const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
-            bucket.count += 1;
-            bucket.r += r;
-            bucket.g += g;
-            bucket.b += b;
-            buckets.set(key, bucket);
-          }
+          // Quantize to 16 levels/channel so anti-aliasing noise around
+          // glyph edges collapses into the same bucket, letting the true
+          // background win by pixel count instead of splitting its vote.
+          const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
+          const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
+          bucket.count += 1;
+          bucket.r += r;
+          bucket.g += g;
+          bucket.b += b;
+          buckets.set(key, bucket);
         }
 
         let best = [...buckets.values()].sort((a, b) => b.count - a.count)[0];
@@ -662,7 +676,7 @@ export function EditPdf() {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const drafting = useRef<{ id: string; startX: number; startY: number } | null>(null);
   const dragging = useRef<{
-    id: string; type: El['type']; offX: number; offY: number;
+    id: string; type: El['type']; canMove: boolean; offX: number; offY: number;
     startClientX: number; startClientY: number; moved: boolean;
   } | null>(null);
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
@@ -840,7 +854,9 @@ export function EditPdf() {
     ]);
     setSelected({ kind: 'element', id });
     setFocusElementId(id);
-    setTool('select');
+    // Stay in the text tool so clicking this box — or clicking elsewhere to
+    // add another one — keeps placing/editing text instead of dropping into
+    // Move mode, where the next click would drag the box instead of typing.
   };
 
   const editSourceText = (box: PdfTextBox) => {
@@ -848,7 +864,9 @@ export function EditPdf() {
     if (existing) {
       setSelected({ kind: 'element', id: existing.id });
       setFocusElementId(existing.id);
-      setTool('select');
+      // Stay in the text-editing tool so you can keep clicking line after
+      // line to edit — don't drop into Move mode after each edit.
+      setTool('editText');
       return;
     }
 
@@ -878,7 +896,7 @@ export function EditPdf() {
     ]);
     setSelected({ kind: 'element', id });
     setFocusElementId(id);
-    setTool('select');
+    setTool('editText');
 
     // Match the original text's color instead of always defaulting to
     // near-black, so editing a line doesn't change how it looks.
@@ -968,6 +986,9 @@ export function EditPdf() {
 
     if (dragging.current) {
       const dr = dragging.current;
+      // In the text/editText tools, a text box is click-to-edit only — never
+      // dragged. Dragging is reserved for the Move tool.
+      if (!dr.canMove) return;
       // Require a small amount of real movement before treating this as a
       // drag, so a plain click/tap to select an element never nudges it.
       if (!dr.moved) {
@@ -1004,14 +1025,19 @@ export function EditPdf() {
   };
 
   const startDrag = (e: React.PointerEvent, el: El) => {
-    if (tool !== 'select' || el.type === 'pen' || !elementHasBox(el)) return;
+    if (el.type === 'pen' || !elementHasBox(el)) return;
+    const isTextEl = el.type === 'text' || el.type === 'replaceText';
+    const canMove = tool === 'select';
+    // Text boxes stay clickable-to-edit in the text/editText tools (just not
+    // draggable there); every other element only reacts in Move mode.
+    if (!canMove && !isTextEl) return;
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
     // History is only recorded once the pointer actually moves (see
     // onPointerMove), so a plain click-to-select doesn't pollute undo.
     dragging.current = {
-      id: el.id, type: el.type, offX: xPct - el.xPct, offY: yPct - el.yPct,
+      id: el.id, type: el.type, canMove, offX: xPct - el.xPct, offY: yPct - el.yPct,
       startClientX: e.clientX, startClientY: e.clientY, moved: false,
     };
     overlayRef.current?.setPointerCapture(e.pointerId);
@@ -1715,7 +1741,11 @@ export function EditPdf() {
                         e.stopPropagation();
                         editSourceText(box);
                       }}
-                      className="absolute rounded-[2px] border border-sky-500/35 bg-sky-400/10 opacity-60 transition-opacity hover:opacity-100 focus:opacity-100"
+                      // Invisible by default so the page just looks like the PDF —
+                      // a faint tint appears only on hover/focus, to hint that the
+                      // line under the cursor is clickable, without making every
+                      // detected line look like a permanent form field.
+                      className="absolute rounded-[2px] border border-transparent bg-transparent transition-colors hover:border-sky-500/40 hover:bg-sky-400/10 focus-visible:border-sky-500/60 focus-visible:bg-sky-400/15"
                       style={{
                         left: `${box.xPct}%`,
                         top: `${box.yPct}%`,
