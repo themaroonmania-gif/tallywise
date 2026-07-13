@@ -58,8 +58,8 @@ export function Dropzone({ accept, multiple = false, onFiles, label, hint }: Dro
       }}
       className={`cursor-pointer rounded-[1.75rem] border-2 border-dashed p-8 text-center transition-all md:p-10 ${
         dragging
-          ? 'border-[#b77a22] bg-[#fff4d8]'
-          : 'border-[#dacbb3] bg-[#fbf4e6] hover:border-[#b77a22]/55 hover:bg-[#fffaf0]'
+          ? 'border-[#2563eb] bg-[#dbeafe]'
+          : 'border-[#e2e8f0] bg-[#f8fafc] hover:border-[#2563eb]/55 hover:bg-[#ffffff]'
       }`}
     >
       <input
@@ -73,11 +73,11 @@ export function Dropzone({ accept, multiple = false, onFiles, label, hint }: Dro
           e.target.value = '';
         }}
       />
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#1b2a2f] text-[#f2c879] shadow-xl shadow-slate-900/10">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-[#0f172a] text-[#60a5fa] shadow-xl shadow-slate-900/10">
         <UploadCloud className="h-7 w-7" />
       </div>
-      <p className="font-display text-2xl font-black tracking-tight text-[#241c17]">{label ?? 'Select files'}</p>
-      <p className="mt-2 text-sm font-semibold text-[#6f6459]">{hint ?? 'or drag and drop them here'}</p>
+      <p className="font-display text-2xl font-black tracking-tight text-[#0f172a]">{label ?? 'Select files'}</p>
+      <p className="mt-2 text-sm font-semibold text-[#475569]">{hint ?? 'or drag and drop them here'}</p>
     </div>
   );
 }
@@ -94,7 +94,7 @@ export function PrimaryButton({ onClick, disabled, loading, children }: PrimaryB
     <button
       onClick={onClick}
       disabled={disabled || loading}
-      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1b2a2f] px-6 py-4 text-sm font-black uppercase tracking-[0.12em] text-[#f6efe1] shadow-xl shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-[#26383f] disabled:cursor-not-allowed disabled:bg-[#c8bba8] disabled:shadow-none"
+      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#0f172a] px-6 py-4 text-sm font-black uppercase tracking-[0.12em] text-[#f8fafc] shadow-xl shadow-slate-900/15 transition-all hover:-translate-y-0.5 hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:bg-[#cbd5e1] disabled:shadow-none"
     >
       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
       {children}
@@ -117,8 +117,8 @@ export function ResultPanel({ filename, size, onDownload, onReset, note }: Resul
       <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0f766e] text-white shadow-xl shadow-[#0f766e]/15">
         <Download className="h-6 w-6" />
       </div>
-      <p className="font-display text-2xl font-black text-[#241c17]">Your file is ready</p>
-      <p className="mt-1 truncate text-xs font-semibold text-[#6f6459]">
+      <p className="font-display text-2xl font-black text-[#0f172a]">Your file is ready</p>
+      <p className="mt-1 truncate text-xs font-semibold text-[#475569]">
         {filename}
         {typeof size === 'number' ? ` - ${formatBytes(size)}` : ''}
       </p>
@@ -132,7 +132,7 @@ export function ResultPanel({ filename, size, onDownload, onReset, note }: Resul
         </button>
         <button
           onClick={onReset}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#dacbb3] bg-white px-6 py-3 text-sm font-black text-[#463b33] transition-all hover:bg-[#fffaf0]"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#e2e8f0] bg-white px-6 py-3 text-sm font-black text-[#334155] transition-all hover:bg-[#ffffff]"
         >
           Start over
         </button>

@@ -16,10 +16,10 @@ export default function PrivacyPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <article className="paper-card rounded-[2rem] p-6 md:p-10">
             <span className="eyebrow">Policy</span>
-            <h1 className="font-display mt-5 text-5xl font-black tracking-tight text-[#241c17]">Privacy Policy</h1>
-            <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-[#8f8170]">Last updated: July 8, 2026</p>
+            <h1 className="font-display mt-5 text-5xl font-black tracking-tight text-[#0f172a]">Privacy Policy</h1>
+            <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-[#94a3b8]">Last updated: July 8, 2026</p>
 
-            <div className="content-prose mt-8 space-y-5 border-t border-[#dacbb3] pt-8 text-sm font-semibold">
+            <div className="content-prose mt-8 space-y-5 border-t border-[#e2e8f0] pt-8 text-sm font-semibold">
               <p>At Tallywise.co, accessible from https://tallywise.co, one of our main priorities is visitor privacy. This Privacy Policy describes types of information collected and recorded by Tallywise.co and how we use it.</p>
 
               <h2 className="font-display text-2xl font-black">Log files</h2>

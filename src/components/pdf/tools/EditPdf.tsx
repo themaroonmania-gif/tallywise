@@ -1444,7 +1444,7 @@ export function EditPdf() {
         }}
       />
 
-      <div className="sticky top-2 z-20 rounded-[1.5rem] border border-[#dacbb3] bg-[#fffaf0]/95 p-2 shadow-xl shadow-[#3b2a16]/10 backdrop-blur">
+      <div className="sticky top-2 z-20 rounded-[1.5rem] border border-[#e2e8f0] bg-[#ffffff]/95 p-2 shadow-xl shadow-[#0f172a]/10 backdrop-blur">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {tools.map(([t, icon, label]) => (
@@ -1456,8 +1456,8 @@ export function EditPdf() {
                 aria-label={label}
                 className={`flex h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-all sm:w-auto sm:gap-1.5 sm:px-3 ${
                   tool === t
-                    ? 'border-[#1b2a2f] bg-[#1b2a2f] text-[#f6efe1] shadow-sm shadow-slate-900/20'
-                    : 'border-[#dacbb3] bg-white/70 text-[#5f554d] hover:border-[#b77a22]/50 hover:text-[#241c17]'
+                    ? 'border-[#0f172a] bg-[#0f172a] text-[#f8fafc] shadow-sm shadow-slate-900/20'
+                    : 'border-[#e2e8f0] bg-white/70 text-[#475569] hover:border-[#2563eb]/50 hover:text-[#0f172a]'
                 }`}
               >
                 {icon}
@@ -1469,7 +1469,7 @@ export function EditPdf() {
               onClick={() => imageInputRef.current?.click()}
               title="Add image"
               aria-label="Add image"
-              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 px-2 text-sm font-bold text-[#5f554d] transition-all hover:border-[#b77a22]/50 hover:text-[#241c17] sm:gap-1.5 sm:px-3"
+              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white/70 px-2 text-sm font-bold text-[#475569] transition-all hover:border-[#2563eb]/50 hover:text-[#0f172a] sm:gap-1.5 sm:px-3"
             >
               <ImagePlus className="h-4 w-4" />
               <span className="hidden text-xs sm:inline">Image</span>
@@ -1483,7 +1483,7 @@ export function EditPdf() {
               disabled={!pastEls.length}
               title="Undo"
               aria-label="Undo"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white/70 text-[#475569] transition-all hover:border-[#2563eb]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Undo2 className="h-4 w-4" />
             </button>
@@ -1493,12 +1493,12 @@ export function EditPdf() {
               disabled={!futureEls.length}
               title="Redo"
               aria-label="Redo"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white/70 text-[#475569] transition-all hover:border-[#2563eb]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Redo2 className="h-4 w-4" />
             </button>
 
-            <div className="mx-1 hidden h-7 w-px bg-[#dacbb3] sm:block" />
+            <div className="mx-1 hidden h-7 w-px bg-[#e2e8f0] sm:block" />
 
             <button
               type="button"
@@ -1506,7 +1506,7 @@ export function EditPdf() {
               disabled={zoom <= 0.65}
               title="Zoom out"
               aria-label="Zoom out"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white/70 text-[#475569] transition-all hover:border-[#2563eb]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomOut className="h-4 w-4" />
             </button>
@@ -1515,18 +1515,18 @@ export function EditPdf() {
               onClick={() => setZoom(1)}
               title="Fit page"
               aria-label="Fit page"
-              className="flex h-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5f554d] transition-all hover:border-[#b77a22]/50"
+              className="flex h-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#475569] transition-all hover:border-[#2563eb]/50"
             >
               Fit
             </button>
-            <span className="min-w-12 text-center text-xs font-black text-[#6f6459]">{Math.round(zoom * 100)}%</span>
+            <span className="min-w-12 text-center text-xs font-black text-[#475569]">{Math.round(zoom * 100)}%</span>
             <button
               type="button"
               onClick={() => setZoom((value) => clamp(Number((value + 0.15).toFixed(2)), 0.65, 2.4))}
               disabled={zoom >= 2.4}
               title="Zoom in"
               aria-label="Zoom in"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] bg-white/70 text-[#475569] transition-all hover:border-[#2563eb]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomIn className="h-4 w-4" />
             </button>
@@ -1545,8 +1545,8 @@ export function EditPdf() {
           </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#dacbb3] pt-2">
-          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">Color</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#e2e8f0] pt-2">
+          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">Color</span>
           {COLORS.map((c) => (
             <button
               key={c}
@@ -1594,7 +1594,7 @@ export function EditPdf() {
                 onClick={duplicateSelected}
                 title="Duplicate selected item"
                 aria-label="Duplicate selected item"
-                className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-[#dacbb3] bg-white/70 px-3 text-xs font-black text-[#5f554d] hover:border-[#b77a22]/50"
+                className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-[#e2e8f0] bg-white/70 px-3 text-xs font-black text-[#475569] hover:border-[#2563eb]/50"
               >
                 <Copy className="h-4 w-4" />
                 Duplicate
@@ -1615,7 +1615,7 @@ export function EditPdf() {
             type="button"
             onClick={clearCurrentPage}
             disabled={!currentEls.length}
-            className="flex h-9 items-center justify-center rounded-md border border-[#dacbb3] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5f554d] hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-35"
+            className="flex h-9 items-center justify-center rounded-md border border-[#e2e8f0] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#475569] hover:border-[#2563eb]/50 disabled:cursor-not-allowed disabled:opacity-35"
           >
             Clear page
           </button>
@@ -1640,9 +1640,9 @@ export function EditPdf() {
       )}
 
       {selectedElement && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 px-4 py-3 text-xs font-bold text-[#6f6459]">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e2e8f0] bg-[#ffffff]/80 px-4 py-3 text-xs font-bold text-[#475569]">
           <span>
-            Selected: <strong className="text-[#241c17]">{selectedElement.type === 'replaceText' ? 'source text' : selectedElement.type}</strong>
+            Selected: <strong className="text-[#0f172a]">{selectedElement.type === 'replaceText' ? 'source text' : selectedElement.type}</strong>
           </span>
           {elementHasBox(selectedElement) && (
             <span>
@@ -1650,13 +1650,13 @@ export function EditPdf() {
               Width {Math.round(selectedElement.wPct)}%
             </span>
           )}
-          <span className="text-[#8a5417]">Drag to move. Resize from the handle. Delete masks source text.</span>
+          <span className="text-[#1d4ed8]">Drag to move. Resize from the handle. Delete masks source text.</span>
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[124px_minmax(0,1fr)]">
-        <aside className="order-2 rounded-[1.5rem] border border-[#dacbb3] bg-[#fbf4e6] p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
-          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">
+        <aside className="order-2 rounded-[1.5rem] border border-[#e2e8f0] bg-[#f8fafc] p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
+          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">
             <PanelLeft className="h-3.5 w-3.5" />
             Pages
           </div>
@@ -1671,20 +1671,20 @@ export function EditPdf() {
                 }}
                 className={`min-w-20 rounded-xl border bg-white p-1 text-left transition-all lg:min-w-0 ${
                   index === current
-                    ? 'border-[#b77a22] shadow-sm shadow-[#b77a22]/20'
-                    : 'border-[#dacbb3] hover:border-[#b77a22]/45'
+                    ? 'border-[#2563eb] shadow-sm shadow-[#2563eb]/20'
+                    : 'border-[#e2e8f0] hover:border-[#2563eb]/45'
                 }`}
                 aria-label={`Go to page ${index + 1}`}
               >
                 <img src={p.url} alt={`Page ${index + 1} thumbnail`} className="h-24 w-full rounded-lg object-cover lg:h-auto" />
-                <span className="mt-1 block text-center text-[10px] font-black text-[#6f6459]">Page {index + 1}</span>
+                <span className="mt-1 block text-center text-[10px] font-black text-[#475569]">Page {index + 1}</span>
               </button>
             ))}
           </div>
         </aside>
 
         <section className="order-1 min-w-0 lg:order-2">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 px-3 py-2">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e2e8f0] bg-[#ffffff]/80 px-3 py-2">
             <button onClick={reset} className="text-xs font-black text-[#be123c] hover:underline">
               Change file
             </button>
@@ -1694,11 +1694,11 @@ export function EditPdf() {
                 onClick={() => setCurrent((c) => Math.max(0, c - 1))}
                 disabled={current === 0}
                 aria-label="Previous page"
-                className="rounded-md border border-[#dacbb3] bg-white p-2 text-[#5f554d] disabled:opacity-30"
+                className="rounded-md border border-[#e2e8f0] bg-white p-2 text-[#475569] disabled:opacity-30"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs font-black text-[#5f554d]">
+              <span className="text-xs font-black text-[#475569]">
                 Page {current + 1} of {pages.length}
               </span>
               <button
@@ -1706,17 +1706,17 @@ export function EditPdf() {
                 onClick={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
                 disabled={current === pages.length - 1}
                 aria-label="Next page"
-                className="rounded-md border border-[#dacbb3] bg-white p-2 text-[#5f554d] disabled:opacity-30"
+                className="rounded-md border border-[#e2e8f0] bg-white p-2 text-[#475569] disabled:opacity-30"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">
+            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#94a3b8]">
               {page.textBoxes.length ? `${page.textBoxes.length} editable text lines` : 'No text layer yet. Try OCR.'}
             </span>
           </div>
 
-          <div className="max-h-[76vh] overflow-auto rounded-[1.5rem] border border-[#dacbb3] bg-[radial-gradient(circle_at_1px_1px,rgba(70,51,28,0.18)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
+          <div className="max-h-[76vh] overflow-auto rounded-[1.5rem] border border-[#e2e8f0] bg-[radial-gradient(circle_at_1px_1px,rgba(70,51,28,0.18)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
             <div className="mx-auto" style={{ width: `${displayWidth}px`, maxWidth: zoom <= 1 ? '100%' : undefined }}>
               <div
                 ref={overlayRef}
@@ -1724,7 +1724,7 @@ export function EditPdf() {
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onPointerCancel={onPointerUp}
-                className="relative touch-none select-none overflow-hidden rounded-xl border border-[#dacbb3] bg-white shadow-2xl shadow-[#3b2a16]/10"
+                className="relative touch-none select-none overflow-hidden rounded-xl border border-[#e2e8f0] bg-white shadow-2xl shadow-[#0f172a]/10"
                 style={{ cursor: tool === 'select' ? 'default' : tool === 'editText' ? 'text' : 'crosshair' }}
               >
                 <img src={page.url} alt={`Page ${current + 1}`} className="pointer-events-none w-full" draggable={false} />

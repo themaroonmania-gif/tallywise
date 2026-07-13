@@ -16,15 +16,15 @@ export default function AboutPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <article className="paper-card rounded-[2rem] p-6 md:p-10">
             <span className="eyebrow">Our mission</span>
-            <h1 className="font-display mt-5 text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
+            <h1 className="font-display mt-5 text-5xl font-black leading-[0.98] tracking-tight text-[#0f172a] md:text-6xl">
               Tools should feel calm, fast, and trustworthy.
             </h1>
-            <p className="mt-5 text-base font-semibold leading-8 text-[#6f6459] md:text-lg">
+            <p className="mt-5 text-base font-semibold leading-8 text-[#475569] md:text-lg">
               Tallywise builds zero-friction browser tools for the work people do every day: calculate numbers,
               clean up PDFs, convert files, and get on with life.
             </p>
 
-            <div className="content-prose mt-8 space-y-6 border-t border-[#dacbb3] pt-8 text-sm font-semibold">
+            <div className="content-prose mt-8 space-y-6 border-t border-[#e2e8f0] pt-8 text-sm font-semibold">
               <h2 className="font-display text-3xl font-black">Why Tallywise?</h2>
               <p>
                 Most online utility sites are cluttered with heavy scripts, upload gates, confusing paywalls, and
@@ -43,9 +43,9 @@ export default function AboutPage() {
                   ['Privacy first', 'Sensitive document work should happen locally whenever the browser can handle it.'],
                   ['Human formatting', 'Results and workflows should be readable on phones, tablets, and desktops.'],
                 ].map(([title, text]) => (
-                  <li key={title} className="list-none rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/75 p-4">
-                    <strong className="block text-[#241c17]">{title}</strong>
-                    <span className="mt-2 block text-sm leading-6 text-[#6f6459]">{text}</span>
+                  <li key={title} className="list-none rounded-2xl border border-[#e2e8f0] bg-[#ffffff]/75 p-4">
+                    <strong className="block text-[#0f172a]">{title}</strong>
+                    <span className="mt-2 block text-sm leading-6 text-[#475569]">{text}</span>
                   </li>
                 ))}
               </ul>
