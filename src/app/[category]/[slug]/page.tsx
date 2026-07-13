@@ -21,7 +21,7 @@ const categoryBadgeColor: Record<string, string> = {
   health: 'bg-[#be123c] text-white',
   school: 'bg-[#4338ca] text-white',
   conversion: 'bg-[#0f766e] text-white',
-  everyday: 'bg-[#b77a22] text-white',
+  everyday: 'bg-[#1463ff] text-white',
 };
 
 export function generateStaticParams() {
@@ -156,25 +156,25 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
 
             <div className="min-w-0">
               <div className="mx-auto max-w-5xl space-y-7">
-                <nav className="flex flex-wrap items-center gap-2 text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#8f8170]">
-                  <Link href="/" className="inline-flex items-center gap-1 transition hover:text-[#241c17]">
+                <nav className="flex flex-wrap items-center gap-2 text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#8292a6]">
+                  <Link href="/" className="inline-flex items-center gap-1 transition hover:text-[#10243e]">
                     <Home className="h-3.5 w-3.5" />
                     Home
                   </Link>
                   <span>/</span>
-                  <Link href={`/${calc.category}`} className="transition hover:text-[#241c17]">{calc.category}</Link>
+                  <Link href={`/${calc.category}`} className="transition hover:text-[#10243e]">{calc.category}</Link>
                   <span>/</span>
-                  <span className="text-[#241c17]">{calc.name}</span>
+                  <span className="text-[#10243e]">{calc.name}</span>
                 </nav>
 
                 <section className="paper-card rounded-[2rem] p-6 md:p-9">
                   <span className={`inline-flex rounded-full px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] ${badgeColor}`}>
-                    {calc.category} calculator
+                    {calc.category}
                   </span>
-                  <h1 className="font-display mt-5 max-w-4xl text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
+                  <h1 className="font-display mt-5 max-w-4xl text-5xl font-black leading-[0.98] tracking-tight text-[#10243e] md:text-6xl">
                     {calc.h1}
                   </h1>
-                  <p className="mt-5 max-w-3xl text-base font-semibold leading-8 text-[#6f6459]">
+                  <p className="mt-5 max-w-3xl text-base font-semibold leading-8 text-[#52677f]">
                     {calc.seoDescription}
                   </p>
                 </section>
@@ -189,14 +189,14 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
 
                 <article className="paper-card rounded-[1.75rem] p-6 md:p-8">
                   <div className="content-prose max-w-none text-sm font-semibold">
-                    <h2 className="font-display border-b border-[#dacbb3] pb-4 text-3xl font-black tracking-tight text-[#241c17]">
-                      How this calculator works
+                    <h2 className="font-display border-b border-[#d6e0ec] pb-4 text-3xl font-black tracking-tight text-[#10243e]">
+                      Formula and assumptions
                     </h2>
 
                     {calc.formulaDescription && (
-                      <div className="my-5 rounded-2xl border border-[#dacbb3] bg-[#fbf4e6] p-4 font-mono text-xs font-bold text-[#463b33]">
-                        <span className="mb-2 block text-[0.62rem] font-black uppercase tracking-[0.16em] text-[#8a5417]">
-                          Formula model
+                      <div className="my-5 rounded-xl border border-[#d6e0ec] bg-[#f6f9fd] p-4 font-mono text-xs font-bold text-[#334a63]">
+                        <span className="mb-2 block text-[0.62rem] font-black uppercase tracking-[0.16em] text-[#0f52d4]">
+                          Formula
                         </span>
                         <code>{calc.formulaDescription}</code>
                       </div>
@@ -211,22 +211,22 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
 
                 {calc.faqs.length > 0 && (
                   <section className="paper-card rounded-[1.75rem] p-6 md:p-8">
-                    <h2 className="font-display border-b border-[#dacbb3] pb-4 text-3xl font-black tracking-tight text-[#241c17]">
+                    <h2 className="font-display border-b border-[#d6e0ec] pb-4 text-3xl font-black tracking-tight text-[#10243e]">
                       Frequently asked questions
                     </h2>
                     <div className="mt-5 space-y-3">
                       {calc.faqs.map((faq, idx) => (
                         <details
                           key={idx}
-                          className="group rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/72 p-4 transition hover:border-[#b77a22]/40 [&_summary::-webkit-details-marker]:hidden"
+                          className="group rounded-xl border border-[#d6e0ec] bg-white p-4 transition hover:border-[#1463ff]/40 [&_summary::-webkit-details-marker]:hidden"
                         >
-                          <summary className="flex cursor-pointer select-none items-center justify-between gap-3 text-sm font-black text-[#241c17]">
+                          <summary className="flex cursor-pointer select-none items-center justify-between gap-3 text-sm font-black text-[#10243e]">
                             <span>{faq.question}</span>
-                            <span className="shrink-0 rounded-full border border-[#dacbb3] bg-white p-1.5 text-[#8a5417] transition group-open:rotate-180">
+                            <span className="shrink-0 rounded-full border border-[#d6e0ec] bg-white p-1.5 text-[#0f52d4] transition group-open:rotate-180">
                               <ChevronDown className="h-3.5 w-3.5" />
                             </span>
                           </summary>
-                          <p className="mt-3 border-t border-[#dacbb3] pt-3 text-sm font-semibold leading-7 text-[#6f6459]">
+                          <p className="mt-3 border-t border-[#d6e0ec] pt-3 text-sm font-semibold leading-7 text-[#52677f]">
                             {faq.answer}
                           </p>
                         </details>
@@ -239,8 +239,8 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
                   <section className="space-y-4">
                     <div>
                       <p className="eyebrow">Related</p>
-                      <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#241c17]">
-                        More calculators in this workflow
+                      <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#10243e]">
+                        Related calculators
                       </h2>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -254,13 +254,13 @@ export default async function CalculatorPage({ params }: CalculatorPageProps) {
                             <span className={`mb-3 inline-flex rounded-full px-3 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em] ${categoryBadgeColor[rCalc.category] ?? categoryBadgeColor.everyday}`}>
                               {rCalc.category}
                             </span>
-                            <h3 className="font-display text-xl font-black text-[#241c17]">{rCalc.name}</h3>
-                            <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-[#6f6459]">
+                            <h3 className="font-display text-xl font-black text-[#10243e]">{rCalc.name}</h3>
+                            <p className="mt-2 line-clamp-2 text-xs font-semibold leading-5 text-[#52677f]">
                               {rCalc.seoDescription}
                             </p>
                           </div>
-                          <div className="mt-4 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
-                            <span>Compute</span>
+                          <div className="mt-4 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em] text-[#0f52d4]">
+                            <span>Open calculator</span>
                             <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                           </div>
                         </Link>

@@ -166,9 +166,9 @@ export function AdSlot({ id, className = '', type = 'banner' }: AdSlotProps) {
   return (
     <div
       id={id}
-      className={`my-6 flex flex-col items-center justify-center relative overflow-hidden rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/58 shadow-sm transition-all duration-200 ${widthClass} ${heightClass} ${className}`}
+      className={`my-6 flex flex-col items-center justify-center relative overflow-hidden rounded-xl border border-[#d6e0ec] bg-white/70 shadow-sm transition-all duration-200 ${widthClass} ${heightClass} ${className}`}
     >
-      <div className="absolute left-2 top-1 z-10 select-none text-[8px] font-black uppercase tracking-[0.18em] text-[#9a8c7a]">
+      <div className="absolute left-2 top-1 z-10 select-none text-[8px] font-black uppercase tracking-[0.18em] text-[#8292a6]">
         Advertisement
       </div>
       <div ref={containerRef} className="flex h-full w-full items-center justify-center" />

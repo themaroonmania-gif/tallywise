@@ -140,7 +140,6 @@ export const calculatorComponents: Record<string, React.ComponentType> = {
   'menopause-age-calculator': MenopauseAgeCalculator,
 };
 
-// Beautiful Coming Soon component to display for any unmapped calculator (if any are added in the future)
 export function ComingSoonCalculator({
   name,
   formula,
@@ -170,24 +169,24 @@ export function ComingSoonCalculator({
       <div className="space-y-2">
         <h2 className="text-2xl font-extrabold text-slate-800">{name} - Coming Soon</h2>
         <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
-          Our mathematical validation team is currently calibrating and review-testing this calculator model to guarantee 100% compliance and exact-value outputs.
+          This calculator is not available yet. We are checking the formula, edge cases, and result explanations before publishing it.
         </p>
       </div>
 
       {formula && (
         <div className="p-4 bg-slate-50 rounded-xl inline-block max-w-full text-xs font-mono text-slate-600 border border-slate-200">
-          <span className="font-bold block uppercase text-[10px] text-slate-400 mb-1">Expected Formula</span>
+          <span className="font-bold block uppercase text-[10px] text-slate-400 mb-1">Planned formula</span>
           <code>{formula}</code>
         </div>
       )}
 
       <div className="border-t border-slate-100 pt-6">
         <div className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
-          System Verification Status
+          Status
         </div>
         <div className="mt-2 flex justify-center items-center gap-1.5 text-xs text-amber-600 font-semibold">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-          Running Math Validation Suite
+          In review
         </div>
       </div>
     </div>

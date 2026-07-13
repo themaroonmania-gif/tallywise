@@ -19,6 +19,7 @@ import {
   Pen,
   Plus,
   Redo2,
+  RefreshCw,
   Save,
   ScanText,
   Square,
@@ -83,6 +84,7 @@ interface PdfTextBox {
   fontWeight: number;
   fontStyle: FontStyle;
   pdfFontKey: PdfFontKey;
+  source: 'pdf' | 'ocr';
 }
 
 interface RenderedPageInfo {
@@ -178,6 +180,7 @@ interface RawTextRun {
   top: number;
   right: number;
   bottom: number;
+  baseline: number;
   fontSize: number;
   hasEOL: boolean;
   fontFamily: string;
@@ -275,29 +278,39 @@ function isPdfTextItem(item: unknown): item is PdfTextItem {
 function buildTextLines(rawRuns: RawTextRun[], page: number, pageWidth: number, pageHeight: number): PdfTextBox[] {
   const runs = rawRuns
     .filter((run) => run.text.trim() && run.right > run.left && run.bottom > run.top)
-    .sort((a, b) => a.top - b.top || a.left - b.left);
+    .sort((a, b) => a.baseline - b.baseline || a.left - b.left);
 
   const lines: RawTextRun[][] = [];
 
   for (const run of runs) {
-    const lastLine = lines[lines.length - 1];
-    const lastRun = lastLine?.[lastLine.length - 1];
-    const centerY = (run.top + run.bottom) / 2;
-    const lastCenterY = lastRun ? (lastRun.top + lastRun.bottom) / 2 : 0;
-    const sameBaseline = lastRun
-      ? Math.abs(centerY - lastCenterY) <= Math.max(4, Math.min(run.fontSize, lastRun.fontSize) * 0.45)
-      : false;
-    const gap = lastRun ? run.left - lastRun.right : 0;
-    const sameSentence = sameBaseline && gap <= Math.max(28, run.fontSize * 3.2);
+    let bestLine: RawTextRun[] | undefined;
+    let bestDistance = Infinity;
 
-    if (!lastLine || !lastRun || !sameSentence || lastRun.hasEOL) {
+    for (const line of lines) {
+      const lastRun = line[line.length - 1];
+      if (lastRun.hasEOL) continue;
+
+      const baselineDistance = Math.abs(run.baseline - lastRun.baseline);
+      const baselineTolerance = Math.max(1.25, Math.min(run.fontSize, lastRun.fontSize) * 0.16);
+      const gap = run.left - lastRun.right;
+      const maxGap = Math.max(18, Math.min(run.fontSize, lastRun.fontSize) * 2.2);
+
+      if (baselineDistance <= baselineTolerance && gap >= -run.fontSize * 0.35 && gap <= maxGap && baselineDistance < bestDistance) {
+        bestLine = line;
+        bestDistance = baselineDistance;
+      }
+    }
+
+    if (!bestLine) {
       lines.push([run]);
     } else {
-      lastLine.push(run);
+      bestLine.push(run);
     }
   }
 
-  return lines.map((line) => {
+  return lines
+    .sort((a, b) => a[0].top - b[0].top || a[0].left - b[0].left)
+    .map((line) => {
     const sorted = line.sort((a, b) => a.left - b.left);
     const left = Math.min(...sorted.map((run) => run.left));
     const top = Math.min(...sorted.map((run) => run.top));
@@ -327,6 +340,7 @@ function buildTextLines(rawRuns: RawTextRun[], page: number, pageWidth: number, 
       fontWeight: styleRun.fontWeight,
       fontStyle: styleRun.fontStyle,
       pdfFontKey: styleRun.pdfFontKey,
+      source: 'pdf' as const,
     };
   });
 }
@@ -342,24 +356,33 @@ async function extractTextBoxes(data: ArrayBuffer, scale: number): Promise<PdfTe
       const page = await doc.getPage(pageNumber);
       const viewport = page.getViewport({ scale });
       const content = await page.getTextContent();
-      const styles = (content as { styles?: Record<string, { fontFamily?: string }> }).styles ?? {};
+      const styles = (content as {
+        styles?: Record<string, { fontFamily?: string; ascent?: number; descent?: number; vertical?: boolean }>;
+      }).styles ?? {};
       const rawRuns: RawTextRun[] = [];
 
       for (const item of content.items ?? []) {
         if (!isPdfTextItem(item) || !item.str.trim()) continue;
-        const appearance = inferTextAppearance(item.fontName, item.fontName ? styles[item.fontName]?.fontFamily : undefined);
+        const textStyle = item.fontName ? styles[item.fontName] : undefined;
+        if (textStyle?.vertical) continue;
+        const appearance = inferTextAppearance(item.fontName, textStyle?.fontFamily);
         const transform = util.transform(viewport.transform, item.transform);
-        const fontSize = Math.max(Math.hypot(transform[2], transform[3]), Math.abs(item.height || 0) * scale, 6);
-        const width = Math.max(Math.abs(item.width || 0) * scale, Math.abs(transform[0] || 0), 1);
+        const fontSize = Math.max(Math.hypot(transform[2], transform[3]), Math.abs(item.height || 0) * scale, 4);
+        const width = Math.max(Math.abs(item.width || 0) * scale, fontSize * 0.18, 1);
         const left = transform[4];
-        const top = transform[5] - fontSize;
+        const baseline = transform[5];
+        const ascent = typeof textStyle?.ascent === 'number' ? textStyle.ascent : 0.82;
+        const descent = typeof textStyle?.descent === 'number' ? Math.abs(textStyle.descent) : 0.18;
+        const top = baseline - fontSize * ascent;
+        const bottom = baseline + fontSize * descent;
 
         rawRuns.push({
           text: item.str,
           left,
           top,
           right: left + width,
-          bottom: top + fontSize * 1.1,
+          bottom: Math.max(top + 1, bottom),
+          baseline,
           fontSize,
           hasEOL: Boolean(item.hasEOL),
           ...appearance,
@@ -414,6 +437,44 @@ const STANDARD_FONT_BY_KEY: Record<PdfFontKey, StandardFonts> = {
   courierBoldOblique: StandardFonts.CourierBoldOblique,
 };
 
+interface ColorBucket {
+  count: number;
+  r: number;
+  g: number;
+  b: number;
+}
+
+function addColorToBuckets(buckets: Map<string, ColorBucket>, r: number, g: number, b: number) {
+  const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
+  const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
+  bucket.count += 1;
+  bucket.r += r;
+  bucket.g += g;
+  bucket.b += b;
+  buckets.set(key, bucket);
+}
+
+function bucketColor(bucket: ColorBucket) {
+  return {
+    r: Math.round(bucket.r / bucket.count),
+    g: Math.round(bucket.g / bucket.count),
+    b: Math.round(bucket.b / bucket.count),
+  };
+}
+
+function colorDistance(a: { r: number; g: number; b: number }, b: { r: number; g: number; b: number }) {
+  const redMean = (a.r + b.r) / 2;
+  const red = a.r - b.r;
+  const green = a.g - b.g;
+  const blue = a.b - b.b;
+  return Math.sqrt((2 + redMean / 256) * red * red + 4 * green * green + (2 + (255 - redMean) / 256) * blue * blue);
+}
+
+function rgbToHex(color: { r: number; g: number; b: number }) {
+  const toHex = (value: number) => clamp(Math.round(value), 0, 255).toString(16).padStart(2, '0');
+  return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
+}
+
 /**
  * Approximates the original ink color of a detected text line by sampling
  * the darkest pixel inside its bounding box on the rendered page image —
@@ -442,19 +503,33 @@ function sampleTextColor(
         const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
         const { data } = ctx.getImageData(x, y, w, h);
 
-        let bestR = 17, bestG = 24, bestB = 39, bestLuminance = Infinity;
-        for (let i = 0; i < data.length; i += 4) {
-          const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
-          if (a < 200) continue;
-          const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-          if (luminance < bestLuminance) {
-            bestLuminance = luminance;
-            bestR = r; bestG = g; bestB = b;
+        const buckets = new Map<string, ColorBucket>();
+        const edgeBuckets = new Map<string, ColorBucket>();
+        const edgeDepth = Math.max(1, Math.min(3, Math.floor(Math.min(w, h) * 0.16)));
+        for (let yy = 0; yy < h; yy++) {
+          for (let xx = 0; xx < w; xx++) {
+            const i = (yy * w + xx) * 4;
+            const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+            if (a < 200) continue;
+            addColorToBuckets(buckets, r, g, b);
+            if (xx < edgeDepth || yy < edgeDepth || xx >= w - edgeDepth || yy >= h - edgeDepth) {
+              addColorToBuckets(edgeBuckets, r, g, b);
+            }
           }
         }
 
-        const toHex = (n: number) => n.toString(16).padStart(2, '0');
-        resolve(`#${toHex(bestR)}${toHex(bestG)}${toHex(bestB)}`);
+        const colors = [...buckets.values()].sort((a, b) => b.count - a.count);
+        const backgroundBucket = [...edgeBuckets.values()].sort((a, b) => b.count - a.count)[0] ?? colors[0];
+        if (!backgroundBucket) return resolve(DEFAULT_TEXT_COLOR);
+        const background = bucketColor(backgroundBucket);
+        const minimumInkPixels = Math.max(2, Math.floor((w * h) * 0.0015));
+        const foreground = colors
+          .filter((bucket) => bucket.count >= minimumInkPixels)
+          .map((bucket) => ({ bucket, distance: colorDistance(background, bucketColor(bucket)) }))
+          .filter((candidate) => candidate.distance >= 48)
+          .sort((a, b) => (b.distance * Math.log2(b.bucket.count + 1)) - (a.distance * Math.log2(a.bucket.count + 1)))[0];
+
+        resolve(foreground ? rgbToHex(bucketColor(foreground.bucket)) : DEFAULT_TEXT_COLOR);
       } catch {
         resolve(DEFAULT_TEXT_COLOR);
       }
@@ -483,43 +558,24 @@ function sampleBackgroundColor(
         const y = clamp(Math.round((box.yPct / 100) * canvas.height), 0, canvas.height - 1);
         const w = clamp(Math.round((box.wPct / 100) * canvas.width), 1, canvas.width - x);
         const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
-        const samplePad = Math.max(6, Math.round(Math.min(w, h) * 0.55));
-        const sx = clamp(x - samplePad, 0, canvas.width - 1);
-        const sy = clamp(y - samplePad, 0, canvas.height - 1);
-        const sw = clamp(w + samplePad * 2, 1, canvas.width - sx);
-        const sh = clamp(h + samplePad * 2, 1, canvas.height - sy);
-        const { data } = ctx.getImageData(sx, sy, sw, sh);
+        const { data } = ctx.getImageData(x, y, w, h);
+        const buckets = new Map<string, ColorBucket>();
+        const edgeDepth = Math.max(1, Math.min(3, Math.floor(Math.min(w, h) * 0.16)));
+        const step = Math.max(1, Math.floor(Math.sqrt((w * h) / 7000)));
 
-        const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
-        const step = Math.max(1, Math.floor(Math.sqrt((sw * sh) / 7000)));
-
-        for (let yy = 0; yy < sh; yy += step) {
-          for (let xx = 0; xx < sw; xx += step) {
-            const absoluteX = sx + xx;
-            const absoluteY = sy + yy;
-            if (absoluteX >= x && absoluteX < x + w && absoluteY >= y && absoluteY < y + h) continue;
-
-            const i = (yy * sw + xx) * 4;
+        for (let yy = 0; yy < h; yy += step) {
+          for (let xx = 0; xx < w; xx += step) {
+            if (xx >= edgeDepth && yy >= edgeDepth && xx < w - edgeDepth && yy < h - edgeDepth) continue;
+            const i = (yy * w + xx) * 4;
             const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
             if (a < 200) continue;
-
-            const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
-            const bucket = buckets.get(key) ?? { count: 0, r: 0, g: 0, b: 0 };
-            bucket.count += 1;
-            bucket.r += r;
-            bucket.g += g;
-            bucket.b += b;
-            buckets.set(key, bucket);
+            addColorToBuckets(buckets, r, g, b);
           }
         }
 
         let best = [...buckets.values()].sort((a, b) => b.count - a.count)[0];
         if (!best) best = { count: 1, r: 255, g: 255, b: 255 };
-        const bestR = Math.round(best.r / best.count);
-        const bestG = Math.round(best.g / best.count);
-        const bestB = Math.round(best.b / best.count);
-        const toHex = (n: number) => n.toString(16).padStart(2, '0');
-        resolve(`#${toHex(bestR)}${toHex(bestG)}${toHex(bestB)}`);
+        resolve(rgbToHex(bucketColor(best)));
       } catch {
         resolve(DEFAULT_PAGE_COLOR);
       }
@@ -537,7 +593,7 @@ function ocrBlocksToTextBoxes(blocks: OcrBlock[] | null | undefined, pageIndex: 
       paragraph.lines?.forEach((line, lineIndex) => {
         const text = line.text.trim();
         const box = line.bbox;
-        if (!text || !box) return;
+        if (!text || !box || (typeof line.confidence === 'number' && line.confidence < 55)) return;
 
         const x0 = clamp(box.x0, 0, width);
         const y0 = clamp(box.y0, 0, height);
@@ -561,6 +617,7 @@ function ocrBlocksToTextBoxes(blocks: OcrBlock[] | null | undefined, pageIndex: 
           hPct: ((bottom - top) / height) * 100,
           fontSizePct: clamp((lineHeight / height) * 100 * 0.78, 0.7, 8),
           ...DEFAULT_TEXT_APPEARANCE,
+          source: 'ocr',
         });
       });
     });
@@ -840,7 +897,18 @@ export function EditPdf() {
     ]);
     setSelected({ kind: 'element', id });
     setFocusElementId(id);
-    setTool('select');
+    setTool('text');
+  };
+
+  const matchSourceColors = (id: string, box: PdfTextBox) => {
+    const pageUrl = pages[box.page]?.url;
+    if (!pageUrl) return;
+
+    Promise.all([sampleTextColor(pageUrl, box), sampleBackgroundColor(pageUrl, box)]).then(([sampledColor, backgroundColor]) => {
+      updateEl(id, (el) =>
+        el.type === 'replaceText' ? { ...el, color: sampledColor, backgroundColor } : el
+      );
+    });
   };
 
   const editSourceText = (box: PdfTextBox) => {
@@ -848,7 +916,7 @@ export function EditPdf() {
     if (existing) {
       setSelected({ kind: 'element', id: existing.id });
       setFocusElementId(existing.id);
-      setTool('select');
+      setTool('editText');
       return;
     }
 
@@ -878,18 +946,8 @@ export function EditPdf() {
     ]);
     setSelected({ kind: 'element', id });
     setFocusElementId(id);
-    setTool('select');
-
-    // Match the original text's color instead of always defaulting to
-    // near-black, so editing a line doesn't change how it looks.
-    const pageUrl = page?.url;
-    if (pageUrl) {
-      Promise.all([sampleTextColor(pageUrl, box), sampleBackgroundColor(pageUrl, box)]).then(([sampledColor, backgroundColor]) => {
-        updateEl(id, (el) =>
-          el.type === 'replaceText' ? { ...el, color: sampledColor, backgroundColor } : el
-        );
-      });
-    }
+    setTool('editText');
+    matchSourceColors(id, box);
   };
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -1004,7 +1062,8 @@ export function EditPdf() {
   };
 
   const startDrag = (e: React.PointerEvent, el: El) => {
-    if (tool !== 'select' || el.type === 'pen' || !elementHasBox(el)) return;
+    const isTextElement = el.type === 'text' || el.type === 'replaceText';
+    if ((!isTextElement && tool !== 'select') || el.type === 'pen' || !elementHasBox(el)) return;
     e.stopPropagation();
     setSelected({ kind: 'element', id: el.id });
     const { xPct, yPct } = pct(e.clientX, e.clientY);
@@ -1050,6 +1109,19 @@ export function EditPdf() {
     setColor(nextColor);
     if (!selectedElement || selectedElement.type === 'image') return;
     commitUpdateEl(selectedElement.id, (el) => ('color' in el ? { ...el, color: nextColor } : el));
+  };
+
+  const applyBackgroundColor = (nextColor: string) => {
+    if (!selectedElement || selectedElement.type !== 'replaceText') return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'replaceText' ? { ...el, backgroundColor: nextColor } : el
+    );
+  };
+
+  const rematchSelectedSource = () => {
+    if (!selectedElement || selectedElement.type !== 'replaceText') return;
+    const source = pages[selectedElement.page]?.textBoxes.find((box) => box.id === selectedElement.sourceId);
+    if (source) matchSourceColors(selectedElement.id, source);
   };
 
   const duplicateSelected = () => {
@@ -1145,7 +1217,7 @@ export function EditPdf() {
       });
       await worker.setParameters({
         preserve_interword_spaces: '1',
-        tessedit_pageseg_mode: '11',
+        tessedit_pageseg_mode: '3',
       });
 
       setOcrStatus({ page: current, label: 'Recognizing text', progress: 0.45 });
@@ -1418,7 +1490,7 @@ export function EditPdf() {
         }}
       />
 
-      <div className="sticky top-2 z-20 rounded-[1.5rem] border border-[#dacbb3] bg-[#fffaf0]/95 p-2 shadow-xl shadow-[#3b2a16]/10 backdrop-blur">
+      <div className="sticky top-2 z-20 rounded-[1.25rem] border border-[#d6e0ec] bg-white/95 p-2 shadow-xl shadow-[#10243e]/10 backdrop-blur">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
             {tools.map(([t, icon, label]) => (
@@ -1430,8 +1502,8 @@ export function EditPdf() {
                 aria-label={label}
                 className={`flex h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-all sm:w-auto sm:gap-1.5 sm:px-3 ${
                   tool === t
-                    ? 'border-[#1b2a2f] bg-[#1b2a2f] text-[#f6efe1] shadow-sm shadow-slate-900/20'
-                    : 'border-[#dacbb3] bg-white/70 text-[#5f554d] hover:border-[#b77a22]/50 hover:text-[#241c17]'
+                    ? 'border-[#1463ff] bg-[#1463ff] text-white shadow-sm shadow-[#1463ff]/20'
+                    : 'border-[#d6e0ec] bg-white text-[#52677f] hover:border-[#1463ff]/50 hover:text-[#10243e]'
                 }`}
               >
                 {icon}
@@ -1443,7 +1515,7 @@ export function EditPdf() {
               onClick={() => imageInputRef.current?.click()}
               title="Add image"
               aria-label="Add image"
-              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 px-2 text-sm font-bold text-[#5f554d] transition-all hover:border-[#b77a22]/50 hover:text-[#241c17] sm:gap-1.5 sm:px-3"
+              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white px-2 text-sm font-bold text-[#52677f] transition-all hover:border-[#1463ff]/50 hover:text-[#10243e] sm:gap-1.5 sm:px-3"
             >
               <ImagePlus className="h-4 w-4" />
               <span className="hidden text-xs sm:inline">Image</span>
@@ -1457,7 +1529,7 @@ export function EditPdf() {
               disabled={!pastEls.length}
               title="Undo"
               aria-label="Undo"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white text-[#52677f] transition-all hover:border-[#1463ff]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Undo2 className="h-4 w-4" />
             </button>
@@ -1467,12 +1539,12 @@ export function EditPdf() {
               disabled={!futureEls.length}
               title="Redo"
               aria-label="Redo"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white text-[#52677f] transition-all hover:border-[#1463ff]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <Redo2 className="h-4 w-4" />
             </button>
 
-            <div className="mx-1 hidden h-7 w-px bg-[#dacbb3] sm:block" />
+            <div className="mx-1 hidden h-7 w-px bg-[#d6e0ec] sm:block" />
 
             <button
               type="button"
@@ -1480,7 +1552,7 @@ export function EditPdf() {
               disabled={zoom <= 0.65}
               title="Zoom out"
               aria-label="Zoom out"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white text-[#52677f] transition-all hover:border-[#1463ff]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomOut className="h-4 w-4" />
             </button>
@@ -1489,18 +1561,18 @@ export function EditPdf() {
               onClick={() => setZoom(1)}
               title="Fit page"
               aria-label="Fit page"
-              className="flex h-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5f554d] transition-all hover:border-[#b77a22]/50"
+              className="flex h-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#52677f] transition-all hover:border-[#1463ff]/50"
             >
               Fit
             </button>
-            <span className="min-w-12 text-center text-xs font-black text-[#6f6459]">{Math.round(zoom * 100)}%</span>
+            <span className="min-w-12 text-center text-xs font-black text-[#52677f]">{Math.round(zoom * 100)}%</span>
             <button
               type="button"
               onClick={() => setZoom((value) => clamp(Number((value + 0.15).toFixed(2)), 0.65, 2.4))}
               disabled={zoom >= 2.4}
               title="Zoom in"
               aria-label="Zoom in"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#dacbb3] bg-white/70 text-[#5f554d] transition-all hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white text-[#52677f] transition-all hover:border-[#1463ff]/50 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ZoomIn className="h-4 w-4" />
             </button>
@@ -1519,8 +1591,8 @@ export function EditPdf() {
           </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#dacbb3] pt-2">
-          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">Color</span>
+        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#d6e0ec] pt-2">
+          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8292a6]">Text color</span>
           {COLORS.map((c) => (
             <button
               key={c}
@@ -1568,7 +1640,7 @@ export function EditPdf() {
                 onClick={duplicateSelected}
                 title="Duplicate selected item"
                 aria-label="Duplicate selected item"
-                className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-[#dacbb3] bg-white/70 px-3 text-xs font-black text-[#5f554d] hover:border-[#b77a22]/50"
+                className="ml-auto flex h-9 items-center justify-center gap-1 rounded-md border border-[#d6e0ec] bg-white px-3 text-xs font-black text-[#52677f] hover:border-[#1463ff]/50"
               >
                 <Copy className="h-4 w-4" />
                 Duplicate
@@ -1585,11 +1657,36 @@ export function EditPdf() {
               </button>
             </>
           )}
+
+          {selectedElement?.type === 'replaceText' && (
+            <>
+              <div className="mx-1 h-7 w-px bg-slate-200" />
+              <label className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                Background
+                <input
+                  type="color"
+                  value={selectedElement.backgroundColor}
+                  onChange={(event) => applyBackgroundColor(event.target.value)}
+                  className="h-6 w-7 cursor-pointer rounded border-0 bg-transparent p-0"
+                  aria-label="Replacement background color"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={rematchSelectedSource}
+                className="flex h-9 items-center gap-1.5 rounded-md border border-sky-200 bg-sky-50 px-3 text-xs font-black text-sky-700 hover:border-sky-300"
+                title="Detect the original text and background colors again"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Match source
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={clearCurrentPage}
             disabled={!currentEls.length}
-            className="flex h-9 items-center justify-center rounded-md border border-[#dacbb3] bg-white/70 px-3 text-xs font-black uppercase tracking-[0.12em] text-[#5f554d] hover:border-[#b77a22]/50 disabled:cursor-not-allowed disabled:opacity-35"
+            className="flex h-9 items-center justify-center rounded-md border border-[#d6e0ec] bg-white px-3 text-xs font-black uppercase tracking-[0.12em] text-[#52677f] hover:border-[#1463ff]/50 disabled:cursor-not-allowed disabled:opacity-35"
           >
             Clear page
           </button>
@@ -1614,9 +1711,9 @@ export function EditPdf() {
       )}
 
       {selectedElement && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 px-4 py-3 text-xs font-bold text-[#6f6459]">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d6e0ec] bg-[#f6f9fd] px-4 py-3 text-xs font-bold text-[#52677f]">
           <span>
-            Selected: <strong className="text-[#241c17]">{selectedElement.type === 'replaceText' ? 'source text' : selectedElement.type}</strong>
+            Selected: <strong className="text-[#10243e]">{selectedElement.type === 'replaceText' ? 'source text' : selectedElement.type}</strong>
           </span>
           {elementHasBox(selectedElement) && (
             <span>
@@ -1624,13 +1721,13 @@ export function EditPdf() {
               Width {Math.round(selectedElement.wPct)}%
             </span>
           )}
-          <span className="text-[#8a5417]">Drag to move. Resize from the handle. Delete masks source text.</span>
+          <span className="text-[#0f52d4]">Type directly in the text. Use the small handles to move or resize it.</span>
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[124px_minmax(0,1fr)]">
-        <aside className="order-2 rounded-[1.5rem] border border-[#dacbb3] bg-[#fbf4e6] p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
-          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">
+        <aside className="order-2 rounded-xl border border-[#d6e0ec] bg-[#f6f9fd] p-2 lg:order-1 lg:max-h-[76vh] lg:overflow-y-auto">
+          <div className="mb-2 flex items-center gap-1.5 px-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8292a6]">
             <PanelLeft className="h-3.5 w-3.5" />
             Pages
           </div>
@@ -1645,20 +1742,20 @@ export function EditPdf() {
                 }}
                 className={`min-w-20 rounded-xl border bg-white p-1 text-left transition-all lg:min-w-0 ${
                   index === current
-                    ? 'border-[#b77a22] shadow-sm shadow-[#b77a22]/20'
-                    : 'border-[#dacbb3] hover:border-[#b77a22]/45'
+                    ? 'border-[#1463ff] shadow-sm shadow-[#1463ff]/20'
+                    : 'border-[#d6e0ec] hover:border-[#1463ff]/45'
                 }`}
                 aria-label={`Go to page ${index + 1}`}
               >
                 <img src={p.url} alt={`Page ${index + 1} thumbnail`} className="h-24 w-full rounded-lg object-cover lg:h-auto" />
-                <span className="mt-1 block text-center text-[10px] font-black text-[#6f6459]">Page {index + 1}</span>
+                <span className="mt-1 block text-center text-[10px] font-black text-[#52677f]">Page {index + 1}</span>
               </button>
             ))}
           </div>
         </aside>
 
         <section className="order-1 min-w-0 lg:order-2">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#dacbb3] bg-[#fffaf0]/80 px-3 py-2">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d6e0ec] bg-white px-3 py-2">
             <button onClick={reset} className="text-xs font-black text-[#be123c] hover:underline">
               Change file
             </button>
@@ -1668,11 +1765,11 @@ export function EditPdf() {
                 onClick={() => setCurrent((c) => Math.max(0, c - 1))}
                 disabled={current === 0}
                 aria-label="Previous page"
-                className="rounded-md border border-[#dacbb3] bg-white p-2 text-[#5f554d] disabled:opacity-30"
+                className="rounded-md border border-[#d6e0ec] bg-white p-2 text-[#52677f] disabled:opacity-30"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs font-black text-[#5f554d]">
+              <span className="text-xs font-black text-[#52677f]">
                 Page {current + 1} of {pages.length}
               </span>
               <button
@@ -1680,17 +1777,17 @@ export function EditPdf() {
                 onClick={() => setCurrent((c) => Math.min(pages.length - 1, c + 1))}
                 disabled={current === pages.length - 1}
                 aria-label="Next page"
-                className="rounded-md border border-[#dacbb3] bg-white p-2 text-[#5f554d] disabled:opacity-30"
+                className="rounded-md border border-[#d6e0ec] bg-white p-2 text-[#52677f] disabled:opacity-30"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8f8170]">
-              {page.textBoxes.length ? `${page.textBoxes.length} editable text lines` : 'No text layer yet. Try OCR.'}
+            <span className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8292a6]">
+              {page.textBoxes.length ? 'Hover text, then click to edit' : 'No editable text found. Try OCR.'}
             </span>
           </div>
 
-          <div className="max-h-[76vh] overflow-auto rounded-[1.5rem] border border-[#dacbb3] bg-[radial-gradient(circle_at_1px_1px,rgba(70,51,28,0.18)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
+          <div className="max-h-[76vh] overflow-auto rounded-xl border border-[#d6e0ec] bg-[radial-gradient(circle_at_1px_1px,rgba(16,36,62,0.15)_1px,transparent_0)] bg-[length:18px_18px] p-2 shadow-inner sm:p-4">
             <div className="mx-auto" style={{ width: `${displayWidth}px`, maxWidth: zoom <= 1 ? '100%' : undefined }}>
               <div
                 ref={overlayRef}
@@ -1698,7 +1795,7 @@ export function EditPdf() {
                 onPointerMove={onPointerMove}
                 onPointerUp={onPointerUp}
                 onPointerCancel={onPointerUp}
-                className="relative touch-none select-none overflow-hidden rounded-xl border border-[#dacbb3] bg-white shadow-2xl shadow-[#3b2a16]/10"
+                className="relative touch-none select-none overflow-hidden rounded-lg border border-[#d6e0ec] bg-white shadow-2xl shadow-[#10243e]/10"
                 style={{ cursor: tool === 'select' ? 'default' : tool === 'editText' ? 'text' : 'crosshair' }}
               >
                 <img src={page.url} alt={`Page ${current + 1}`} className="pointer-events-none w-full" draggable={false} />
@@ -1715,7 +1812,7 @@ export function EditPdf() {
                         e.stopPropagation();
                         editSourceText(box);
                       }}
-                      className="absolute rounded-[2px] border border-sky-500/35 bg-sky-400/10 opacity-60 transition-opacity hover:opacity-100 focus:opacity-100"
+                      className="absolute rounded-[2px] bg-sky-400/10 opacity-0 outline outline-1 outline-sky-500/60 transition-opacity hover:opacity-100 focus:opacity-100 focus-visible:opacity-100"
                       style={{
                         left: `${box.xPct}%`,
                         top: `${box.yPct}%`,
@@ -1743,7 +1840,6 @@ export function EditPdf() {
                           e.stopPropagation();
                           setSelected({ kind: 'element', id: el.id });
                           setFocusElementId(el.id);
-                          setTool('select');
                         }}
                         style={{
                           left: `${el.xPct}%`,
@@ -1756,7 +1852,7 @@ export function EditPdf() {
                           fontFamily: el.fontFamily,
                           fontWeight: el.fontWeight,
                           fontStyle: el.fontStyle,
-                          outline: selectedThis ? '1px solid #e11d48' : '1px dashed transparent',
+                          outline: selectedThis ? '1px solid #0284c7' : '1px dashed transparent',
                         }}
                         className="absolute cursor-text overflow-hidden whitespace-pre-wrap px-[1px] leading-tight"
                       >
@@ -1770,7 +1866,6 @@ export function EditPdf() {
                             if (!selectedThis) {
                               setSelected({ kind: 'element', id: el.id });
                               setFocusElementId(el.id);
-                              setTool('select');
                             }
                           }}
                           onInput={(e) => {

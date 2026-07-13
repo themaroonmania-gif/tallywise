@@ -18,7 +18,7 @@ const categoryAccent: Record<CategoryKey, { badge: string; glow: string }> = {
   finance: { badge: 'bg-[#0f766e] text-white', glow: 'from-[#0f766e]/18' },
   health: { badge: 'bg-[#be123c] text-white', glow: 'from-[#be123c]/18' },
   school: { badge: 'bg-[#4338ca] text-white', glow: 'from-[#4338ca]/18' },
-  everyday: { badge: 'bg-[#b77a22] text-white', glow: 'from-[#b77a22]/20' },
+  everyday: { badge: 'bg-[#1463ff] text-white', glow: 'from-[#1463ff]/18' },
   conversion: { badge: 'bg-[#0f766e] text-white', glow: 'from-[#0f766e]/18' },
 };
 
@@ -80,23 +80,23 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                     <span className={`inline-flex rounded-full px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] ${accent.badge}`}>
                       {categoryInfo.name} hub
                     </span>
-                    <h1 className="font-display mt-5 max-w-3xl text-5xl font-black leading-[0.98] tracking-tight text-[#241c17] md:text-6xl">
-                      {categoryInfo.name} calculators that stay readable.
+                    <h1 className="font-display mt-5 max-w-3xl text-5xl font-black leading-[0.98] tracking-tight text-[#10243e] md:text-6xl">
+                      {categoryInfo.name} calculators
                     </h1>
-                    <p className="mt-5 max-w-2xl text-base font-semibold leading-8 text-[#6f6459]">
-                      {categoryInfo.description} Each tool is formatted for quick input, clear output, and practical
-                      context below the calculator.
+                    <p className="mt-5 max-w-2xl text-base font-semibold leading-8 text-[#52677f]">
+                      {categoryInfo.description} Enter your numbers, see the result immediately, and review the formula
+                      and assumptions below it.
                     </p>
                   </div>
-                  <div className="rounded-[1.5rem] border border-[#dacbb3] bg-[#fffaf0]/76 p-5">
-                    <p className="text-[0.65rem] font-black uppercase tracking-[0.16em] text-[#8a5417]">
-                      In this section
+                  <div className="rounded-[1.25rem] border border-[#d6e0ec] bg-[#f6f9fd] p-5">
+                    <p className="text-[0.65rem] font-black uppercase tracking-[0.16em] text-[#0f52d4]">
+                      Available now
                     </p>
-                    <p className="font-display mt-2 text-4xl font-black text-[#241c17]">{categoryCalculators.length}</p>
-                    <p className="mt-1 text-sm font-semibold text-[#6f6459]">working calculators</p>
+                    <p className="font-display mt-2 text-4xl font-black text-[#10243e]">{categoryCalculators.length}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#52677f]">calculators</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-[#0f766e]">
                       <CheckCircle2 className="h-4 w-4" />
-                      Live widgets
+                      Instant results
                     </div>
                   </div>
                 </div>
@@ -114,17 +114,17 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                         <span className={`rounded-full px-3 py-1 text-[0.62rem] font-black uppercase tracking-[0.16em] ${accent.badge}`}>
                           {calc.category}
                         </span>
-                        <Calculator className="h-5 w-5 text-[#b77a22]" />
+                        <Calculator className="h-5 w-5 text-[#1463ff]" />
                       </div>
-                      <h2 className="font-display mt-5 text-2xl font-black leading-tight text-[#241c17]">
+                      <h2 className="font-display mt-5 text-2xl font-black leading-tight text-[#10243e]">
                         {calc.name}
                       </h2>
-                      <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-[#6f6459]">
+                      <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-[#52677f]">
                         {calc.seoDescription}
                       </p>
                     </div>
-                    <div className="mt-5 flex items-center justify-between border-t border-[#dacbb3] pt-4 text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
-                      <span>Calculate now</span>
+                    <div className="mt-5 flex items-center justify-between border-t border-[#d6e0ec] pt-4 text-xs font-black uppercase tracking-[0.14em] text-[#0f52d4]">
+                      <span>Open calculator</span>
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                     </div>
                   </Link>

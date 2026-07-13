@@ -35,7 +35,7 @@ export const PDF_GROUPS: Record<PdfToolGroup, { name: string; description: strin
   },
   edit: {
     name: 'Edit & Sign',
-    description: 'Add text, images, watermarks, page numbers, and signatures to any PDF.',
+    description: 'Edit detected text, add content, sign documents, and place page numbers or watermarks.',
     color: 'rose',
   },
   security: {
@@ -46,7 +46,7 @@ export const PDF_GROUPS: Record<PdfToolGroup, { name: string; description: strin
 };
 
 const PRIVACY_NOTE =
-  '<p><strong>100% private:</strong> This tool runs entirely inside your web browser. Your files are never uploaded to a server &mdash; they never leave your device. That makes it faster, and it means your documents stay completely confidential.</p>';
+  '<p><strong>Your file stays on your device.</strong> This tool processes the PDF in your browser instead of uploading it to our server.</p>';
 
 export const pdfTools: PdfToolDef[] = [
   // ---------- ORGANIZE ----------
@@ -337,11 +337,11 @@ export const pdfTools: PdfToolDef[] = [
     seoTitle: 'Edit PDF Online Free - Edit Text, OCR, Images & Markup',
     seoDescription: 'A free online PDF editor with detected text editing, OCR for scanned pages, delete/replace text, images, shapes, highlights, drawing, and private in-browser export.',
     h1: 'Edit PDF',
-    tagline: 'Edit detected or OCR text, delete text, add images, and mark up your PDF.',
+    tagline: 'Click existing text and type your change, or add images, highlights, drawings, and new text.',
     explainerHtml: `
       ${PRIVACY_NOTE}
       <h3>What you can do</h3>
-      <p>Open any PDF and edit detected text lines, run OCR on scanned pages, delete text, add new text boxes, insert images, draw freehand, add rectangles and highlights, and place content anywhere on the page. Desktop users get a thumbnail sidebar, zoom controls, and undo/redo; mobile users get the same editing tools in a touch-friendly layout.</p>
+      <p>Open a PDF, click any detected text, and type your change. You can also run OCR on scans, delete text, add new text boxes, insert images, draw freehand, and add rectangles or highlights. The editor includes page thumbnails, zoom controls, and undo or redo on desktop and mobile.</p>
       <h3>How text editing works</h3>
       <p>Tallywise detects the PDF text layer, lets you edit those lines visually, masks the original text area, and writes your replacement text into the exported PDF. If a page is image-only, use the OCR button to detect readable text first, then click a detected line to replace or delete it.</p>
     `,

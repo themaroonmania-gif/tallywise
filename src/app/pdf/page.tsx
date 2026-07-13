@@ -52,7 +52,7 @@ const ICONS: Record<string, LucideIcon> = {
 const GROUP_ACCENT: Record<string, string> = {
   indigo: 'text-[#4338ca] bg-[#4338ca]/10',
   emerald: 'text-[#0f766e] bg-[#0f766e]/10',
-  amber: 'text-[#b77a22] bg-[#b77a22]/12',
+  amber: 'text-[#1463ff] bg-[#1463ff]/12',
   rose: 'text-[#be123c] bg-[#be123c]/10',
   teal: 'text-[#0f766e] bg-[#0f766e]/10',
 };
@@ -89,21 +89,20 @@ export default function PdfHubPage() {
             <div className="min-w-0 space-y-8">
               <section className="ink-card overflow-hidden rounded-[2rem] px-5 py-10 text-white md:px-10 md:py-14">
                 <div className="mx-auto max-w-4xl text-center">
-                  <div className="eyebrow border-white/15 bg-white/10 text-[#f2c879]">
+                  <div className="eyebrow border-white/15 bg-white/10 text-[#76a7ff]">
                     <ShieldCheck className="h-3.5 w-3.5" />
-                    Files stay in your browser
+                    Your files stay on your device
                   </div>
-                  <h1 className="font-display mx-auto mt-5 max-w-4xl text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
-                    A PDF studio that feels fast enough to trust.
+                  <h1 className="font-display mx-auto mt-5 max-w-4xl text-4xl font-black leading-[0.96] tracking-tight sm:text-5xl md:text-7xl">
+                    Edit, convert, and organize PDFs in your browser.
                   </h1>
-                  <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-8 text-[#d8cbb7] md:text-lg">
-                    Merge, split, compress, convert, OCR, edit, and sign documents without account walls or upload-first
-                    workflows.
+                  <p className="mx-auto mt-5 max-w-2xl text-base font-semibold leading-8 text-[#cbd9e9] md:text-lg">
+                    Choose a tool, select your PDF, and download the result. No signup, software install, or server upload.
                   </p>
-                  <div className="mt-7 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.14em] text-[#d8cbb7]">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"><WifiOff className="h-4 w-4 text-[#f2c879]" /> Local processing</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"><Zap className="h-4 w-4 text-[#f2c879]" /> No signup</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"><Sparkles className="h-4 w-4 text-[#f2c879]" /> OCR editor</span>
+                  <div className="mt-7 flex flex-wrap items-center justify-center gap-3 text-xs font-black uppercase tracking-[0.14em] text-[#cbd9e9]">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"><WifiOff className="h-4 w-4 text-[#76a7ff]" /> Browser processing</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"><Zap className="h-4 w-4 text-[#76a7ff]" /> No account</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"><Sparkles className="h-4 w-4 text-[#76a7ff]" /> Text detection and OCR</span>
                   </div>
                 </div>
               </section>
@@ -114,16 +113,16 @@ export default function PdfHubPage() {
                   className="ink-card group grid gap-6 overflow-hidden rounded-[2rem] p-6 text-white transition hover:-translate-y-0.5 md:grid-cols-[1fr_220px] md:p-8 md:items-center"
                 >
                   <div>
-                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] text-[#f2c879]">
-                      Flagship tool
+                    <span className="inline-flex rounded-full bg-white/10 px-3 py-1 text-[0.65rem] font-black uppercase tracking-[0.16em] text-[#76a7ff]">
+                      PDF editor
                     </span>
                     <h2 className="font-display mt-4 text-4xl font-black tracking-tight">Edit PDF</h2>
-                    <p className="mt-3 max-w-xl text-sm font-semibold leading-7 text-[#d8cbb7]">
-                      Replace detected text, auto-OCR scanned pages, erase text, add images, draw, highlight, zoom,
-                      undo, and export cleanly.
+                    <p className="mt-3 max-w-xl text-sm font-semibold leading-7 text-[#cbd9e9]">
+                      Click detected text and type your change. You can also OCR scans, add text or images, draw,
+                      highlight, erase, undo, and export.
                     </p>
                   </div>
-                  <span className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#f6efe1] px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-[#1b2a2f] transition group-hover:bg-white">
+                  <span className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.14em] text-[#10243e] transition group-hover:bg-[#e8f0ff]">
                     Open editor <ArrowRight className="h-4 w-4" />
                   </span>
                 </Link>
@@ -138,7 +137,7 @@ export default function PdfHubPage() {
                     <div className="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-end">
                       <div>
                         <p className="eyebrow">{group.name}</p>
-                        <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#241c17]">
+                        <h2 className="font-display mt-3 text-3xl font-black tracking-tight text-[#10243e]">
                           {group.description}
                         </h2>
                       </div>
@@ -154,7 +153,7 @@ export default function PdfHubPage() {
                             className="tool-card group relative flex min-h-[190px] flex-col justify-between rounded-[1.5rem] p-5"
                           >
                             {tool.status === 'soon' && (
-                              <span className="absolute right-4 top-4 rounded-full border border-[#b77a22]/20 bg-[#b77a22]/10 px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em] text-[#8a5417]">
+                              <span className="absolute right-4 top-4 rounded-full border border-[#1463ff]/20 bg-[#1463ff]/10 px-2.5 py-1 text-[0.6rem] font-black uppercase tracking-[0.14em] text-[#0f52d4]">
                                 Soon
                               </span>
                             )}
@@ -162,12 +161,12 @@ export default function PdfHubPage() {
                               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent}`}>
                                 <Icon className="h-5 w-5" />
                               </div>
-                              <h3 className="font-display mt-5 text-2xl font-black text-[#241c17]">{tool.name}</h3>
-                              <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-[#6f6459]">
+                              <h3 className="font-display mt-5 text-2xl font-black text-[#10243e]">{tool.name}</h3>
+                              <p className="mt-3 line-clamp-3 text-sm font-semibold leading-6 text-[#52677f]">
                                 {tool.tagline}
                               </p>
                             </div>
-                            <div className="mt-5 flex items-center justify-between border-t border-[#dacbb3] pt-4 text-xs font-black uppercase tracking-[0.14em] text-[#8a5417]">
+                            <div className="mt-5 flex items-center justify-between border-t border-[#d6e0ec] pt-4 text-xs font-black uppercase tracking-[0.14em] text-[#0f52d4]">
                               <span>Open tool</span>
                               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                             </div>

@@ -16,10 +16,10 @@ export default function DisclaimerPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <article className="paper-card rounded-[2rem] p-6 md:p-10">
             <span className="eyebrow">Disclaimer</span>
-            <h1 className="font-display mt-5 text-5xl font-black tracking-tight text-[#241c17]">General Disclaimer</h1>
-            <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-[#8f8170]">Last updated: July 8, 2026</p>
+            <h1 className="font-display mt-5 text-5xl font-black tracking-tight text-[#10243e]">General Disclaimer</h1>
+            <p className="mt-3 text-xs font-black uppercase tracking-[0.16em] text-[#8292a6]">Last updated: July 8, 2026</p>
 
-            <div className="content-prose mt-8 space-y-5 border-t border-[#dacbb3] pt-8 text-sm font-semibold">
+            <div className="content-prose mt-8 space-y-5 border-t border-[#d6e0ec] pt-8 text-sm font-semibold">
               <p>The calculators and estimators on Tallywise.co are provided as self-help tools for independent use and are not intended to provide professional advice.</p>
 
               <h2 className="font-display text-2xl font-black">No financial or legal advice</h2>

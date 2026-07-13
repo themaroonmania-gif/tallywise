@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6efe1;
-  --foreground: #241c17;
-  --surface: #fffaf0;
+  --background: #f3f7fc;
+  --foreground: #10243e;
+  --surface: #ffffff;
   --surface-strong: #ffffff;
-  --surface-muted: #efe5d2;
-  --line: rgba(70, 51, 28, 0.14);
-  --line-strong: rgba(70, 51, 28, 0.24);
-  --ink: #241c17;
-  --muted: #6f6459;
-  --muted-2: #9a8c7a;
-  --brand-ink: #1b2a2f;
-  --brand-brass: #b77a22;
+  --surface-muted: #eaf1f9;
+  --line: rgba(16, 36, 62, 0.12);
+  --line-strong: rgba(16, 36, 62, 0.2);
+  --ink: #10243e;
+  --muted: #52677f;
+  --muted-2: #8292a6;
+  --brand-ink: #10243e;
+  --brand-brass: #1463ff;
   --brand-emerald: #0f766e;
   --brand-rose: #be123c;
   --brand-indigo: #4338ca;
 
   /* Brand */
-  --color-brand-primary: #1b2a2f;
-  --color-brand-secondary: #b77a22;
+  --color-brand-primary: #10243e;
+  --color-brand-secondary: #1463ff;
 
   /* Category accents */
   --color-cat-finance: #10b981;
@@ -34,7 +34,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-jakarta);
   --font-mono: var(--font-jetbrains-mono);
-  --font-display: var(--font-fraunces);
+  --font-display: var(--font-jakarta);
 }
 
 /* In-between shades used throughout the calculator UI (e.g. text-slate-650,
@@ -61,20 +61,21 @@
 
 body {
   background:
-    radial-gradient(circle at 12% 0%, rgba(183, 122, 34, 0.16), transparent 28rem),
-    radial-gradient(circle at 85% 10%, rgba(15, 118, 110, 0.13), transparent 24rem),
-    linear-gradient(180deg, #fbf5e8 0%, var(--background) 48%, #efe5d2 100%);
+    radial-gradient(circle at 10% 0%, rgba(20, 99, 255, 0.09), transparent 30rem),
+    radial-gradient(circle at 90% 4%, rgba(14, 165, 168, 0.07), transparent 26rem),
+    linear-gradient(180deg, #ffffff 0%, var(--background) 52%, #eaf1f9 100%);
   color: var(--foreground);
   min-width: 320px;
 }
 
 ::selection {
-  background: rgba(183, 122, 34, 0.28);
+  background: rgba(20, 99, 255, 0.2);
   color: var(--ink);
 }
 
 .font-display {
-  font-family: var(--font-fraunces), ui-serif, Georgia, serif;
+  font-family: var(--font-jakarta), ui-sans-serif, sans-serif;
+  letter-spacing: -0.035em;
 }
 
 .site-page {
@@ -83,9 +84,9 @@ body {
   flex: 1;
   overflow: hidden;
   background:
-    linear-gradient(rgba(36, 28, 23, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(36, 28, 23, 0.035) 1px, transparent 1px);
-  background-size: 34px 34px;
+    linear-gradient(rgba(16, 36, 62, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 36, 62, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .site-page::before {
@@ -94,8 +95,8 @@ body {
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.68), transparent 34rem),
-    linear-gradient(180deg, rgba(255, 250, 240, 0.86), rgba(246, 239, 225, 0.72));
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.92), transparent 36rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(243, 247, 252, 0.78));
   pointer-events: none;
 }
 
@@ -119,29 +120,29 @@ body {
 
 .paper-card {
   border: 1px solid var(--line);
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 240, 0.96)),
-    var(--surface);
-  box-shadow: 0 24px 70px rgba(59, 42, 22, 0.08);
+  border-radius: 1.25rem !important;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 55px rgba(16, 36, 62, 0.07);
 }
 
 .ink-card {
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 1.5rem !important;
   background:
-    radial-gradient(circle at 10% 10%, rgba(183, 122, 34, 0.28), transparent 18rem),
-    radial-gradient(circle at 90% 0%, rgba(15, 118, 110, 0.24), transparent 18rem),
-    linear-gradient(135deg, #18262b 0%, #231b17 100%);
-  box-shadow: 0 24px 80px rgba(24, 38, 43, 0.22);
+    radial-gradient(circle at 8% 6%, rgba(20, 99, 255, 0.4), transparent 22rem),
+    radial-gradient(circle at 94% 0%, rgba(14, 165, 168, 0.22), transparent 20rem),
+    linear-gradient(135deg, #10243e 0%, #0b1b30 100%);
+  box-shadow: 0 24px 70px rgba(16, 36, 62, 0.2);
 }
 
 .eyebrow {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  border: 1px solid rgba(183, 122, 34, 0.24);
+  border: 1px solid rgba(20, 99, 255, 0.22);
   border-radius: 999px;
-  background: rgba(255, 250, 240, 0.72);
-  color: #8a5417;
+  background: rgba(232, 240, 255, 0.82);
+  color: #0f52d4;
   padding: 0.42rem 0.72rem;
   font-size: 0.69rem;
   font-weight: 900;
@@ -151,15 +152,16 @@ body {
 
 .tool-card {
   border: 1px solid var(--line);
-  background: rgba(255, 250, 240, 0.86);
-  box-shadow: 0 12px 36px rgba(59, 42, 22, 0.055);
+  border-radius: 1rem !important;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 28px rgba(16, 36, 62, 0.045);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
 .tool-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(183, 122, 34, 0.34);
-  box-shadow: 0 22px 54px rgba(59, 42, 22, 0.1);
+  border-color: rgba(20, 99, 255, 0.3);
+  box-shadow: 0 18px 42px rgba(16, 36, 62, 0.09);
 }
 
 .soft-input {
@@ -170,8 +172,8 @@ body {
 }
 
 .soft-input:focus {
-  border-color: rgba(183, 122, 34, 0.62);
-  box-shadow: 0 0 0 4px rgba(183, 122, 34, 0.13);
+  border-color: rgba(20, 99, 255, 0.58);
+  box-shadow: 0 0 0 4px rgba(20, 99, 255, 0.12);
   outline: none;
 }
 
@@ -182,7 +184,7 @@ body {
 
 .content-prose p,
 .content-prose li {
-  color: #5f554d;
+  color: #52677f;
   line-height: 1.78;
 }
 

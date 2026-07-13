@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Fraunces, JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -8,19 +8,14 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-});
-
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
-const SITE_TITLE = "Tallywise - Private Browser Tools for Calculators & PDFs";
+const SITE_TITLE = "Tallywise - PDF Tools and Calculators That Work in Your Browser";
 const SITE_DESC =
-  "Free, private browser tools for calculations and documents: finance, health, school, conversion, and a full PDF studio for merge, split, compress, convert, OCR, edit, and sign.";
+  "Edit, merge, compress, convert, and sign PDFs or use practical finance, health, school, and conversion calculators. No account required.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://tallywise.co"),
@@ -61,7 +56,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${jakarta.variable} ${fraunces.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <head>
         {/* Google AdSense Verification Tag (Critical: must be in raw HTML head for crawler detection) */}
