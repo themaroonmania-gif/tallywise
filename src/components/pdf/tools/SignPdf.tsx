@@ -1,54 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { PDFDocument } from 'pdf-lib';
-import { Loader2, Eraser } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import {
   PdfToolShell, Dropzone, PrimaryButton, ResultPanel, ErrorNote, downloadBlob,
 } from '../PdfToolShell';
+import { SignaturePad } from '../SignaturePad';
 import { renderPdfPages } from '@/lib/pdfRender';
 import { baseName } from '@/lib/pdfUtils';
 
 interface Placed { xPct: number; yPct: number; wPct: number; }
-
-function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) => void }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawing = useRef(false);
-  const dirty = useRef(false);
-
-  useEffect(() => {
-    const c = canvasRef.current!;
-    const ctx = c.getContext('2d')!;
-    ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.strokeStyle = '#0f172a';
-    const pos = (e: PointerEvent) => {
-      const r = c.getBoundingClientRect();
-      return { x: (e.clientX - r.left) * (c.width / r.width), y: (e.clientY - r.top) * (c.height / r.height) };
-    };
-    const down = (e: PointerEvent) => { drawing.current = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-    const move = (e: PointerEvent) => { if (!drawing.current) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); dirty.current = true; };
-    const up = () => { if (drawing.current && dirty.current) onChange(c.toDataURL('image/png')); drawing.current = false; };
-    c.addEventListener('pointerdown', down); c.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-    return () => { c.removeEventListener('pointerdown', down); c.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
-  }, [onChange]);
-
-  const clear = () => {
-    const c = canvasRef.current!;
-    c.getContext('2d')!.clearRect(0, 0, c.width, c.height);
-    dirty.current = false; onChange(null);
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Draw your signature</label>
-        <button onClick={clear} className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-rose-600"><Eraser className="h-3.5 w-3.5" /> Clear</button>
-      </div>
-      <canvas ref={canvasRef} width={600} height={200}
-        className="w-full touch-none rounded-xl border-2 border-dashed border-slate-300 bg-white" style={{ aspectRatio: '3 / 1' }} />
-    </div>
-  );
-}
 
 export function SignPdf() {
   const [file, setFile] = useState<File | null>(null);

@@ -3,29 +3,41 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
+import { PDFDocument, StandardFonts, degrees, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Calendar,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Copy,
   Eraser,
   FileDown,
+  FilePlus2,
   Highlighter,
   ImagePlus,
+  Italic,
   Loader2,
   Minus,
   MousePointer2,
   PanelLeft,
   Pen,
+  PenTool,
   Plus,
   Redo2,
   RefreshCw,
+  RotateCw,
+  ShieldOff,
   Save,
   ScanText,
   Square,
   TextCursorInput,
   Trash2,
   Type,
+  Underline,
   Undo2,
   ZoomIn,
   ZoomOut,
@@ -38,11 +50,27 @@ import {
   ErrorNote,
   downloadBlob,
 } from '../PdfToolShell';
+import { SignaturePad } from '../SignaturePad';
 import { renderPdfPages } from '@/lib/pdfRender';
 import { loadPdfjs } from '@/lib/pdfjs';
 import { baseName } from '@/lib/pdfUtils';
 
-type Tool = 'select' | 'editText' | 'text' | 'whiteout' | 'highlight' | 'rect' | 'pen' | 'image';
+type Tool =
+  | 'select'
+  | 'editText'
+  | 'text'
+  | 'whiteout'
+  | 'redact'
+  | 'highlight'
+  | 'rect'
+  | 'pen'
+  | 'image'
+  | 'field-text'
+  | 'field-signature'
+  | 'field-initials'
+  | 'field-date'
+  | 'field-checkbox';
+type WorkspacePanel = 'edit' | 'forms';
 type RectTool = 'whiteout' | 'highlight' | 'rect';
 type FontStyle = 'normal' | 'italic';
 type PdfFontKey =
@@ -64,6 +92,66 @@ interface TextAppearance {
   fontWeight: number;
   fontStyle: FontStyle;
   pdfFontKey: PdfFontKey;
+}
+
+type FieldTool = 'field-text' | 'field-signature' | 'field-initials' | 'field-date' | 'field-checkbox';
+type FieldKind = 'text' | 'signature' | 'initials' | 'date' | 'checkbox';
+
+const FIELD_KIND_BY_TOOL: Record<FieldTool, FieldKind> = {
+  'field-text': 'text',
+  'field-signature': 'signature',
+  'field-initials': 'initials',
+  'field-date': 'date',
+  'field-checkbox': 'checkbox',
+};
+
+const FIELD_LABELS: Record<FieldKind, string> = {
+  text: 'Text field',
+  signature: 'Signature',
+  initials: 'Initials',
+  date: 'Date',
+  checkbox: 'Checkbox',
+};
+
+// A small set of font choices mapped to both a CSS stack (for the on-screen
+// editor) and a pdf-lib StandardFont (for export), so the two stay in sync.
+type FontChoice = 'sans' | 'serif' | 'mono';
+const FONT_STACKS: Record<FontChoice, string> = {
+  sans: 'Helvetica, Arial, sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  mono: '"Courier New", Courier, monospace',
+};
+const FONT_LABELS: Record<FontChoice, string> = { sans: 'Sans', serif: 'Serif', mono: 'Mono' };
+
+type FontVariant = 'regular' | 'bold' | 'italic' | 'boldItalic';
+// Maps each user-facing font family to its bold/italic StandardFonts
+// variants, all built into pdf-lib — no font embedding/fontkit needed.
+const STANDARD_FONT_MAP: Record<FontChoice, Record<FontVariant, StandardFonts>> = {
+  sans: {
+    regular: StandardFonts.Helvetica,
+    bold: StandardFonts.HelveticaBold,
+    italic: StandardFonts.HelveticaOblique,
+    boldItalic: StandardFonts.HelveticaBoldOblique,
+  },
+  serif: {
+    regular: StandardFonts.TimesRoman,
+    bold: StandardFonts.TimesRomanBold,
+    italic: StandardFonts.TimesRomanItalic,
+    boldItalic: StandardFonts.TimesRomanBoldItalic,
+  },
+  mono: {
+    regular: StandardFonts.Courier,
+    bold: StandardFonts.CourierBold,
+    italic: StandardFonts.CourierOblique,
+    boldItalic: StandardFonts.CourierBoldOblique,
+  },
+};
+
+function fontVariantFor(bold?: boolean, italic?: boolean): FontVariant {
+  if (bold && italic) return 'boldItalic';
+  if (bold) return 'bold';
+  if (italic) return 'italic';
+  return 'regular';
 }
 
 interface Pt {
@@ -92,6 +180,14 @@ interface RenderedPageInfo {
   w: number;
   h: number;
   textBoxes: PdfTextBox[];
+  /** Index of the corresponding page in the originally-opened source PDF,
+   *  used to copy the right page across on export. -1 means this entry has
+   *  no source page (a blank page inserted in the editor). */
+  originalIndex: number;
+  /** Degrees (0/90/180/270) to rotate this page on export — purely a export
+   *  transform, like OrganizePdf; the interactive canvas itself is never
+   *  rotated so edit-element coordinates stay simple. */
+  rotation: number;
 }
 
 interface OcrStatus {
@@ -99,6 +195,8 @@ interface OcrStatus {
   label: string;
   progress: number;
 }
+
+type TextAlign = 'left' | 'center' | 'right';
 
 type El =
   | {
@@ -111,10 +209,11 @@ type El =
       text: string;
       fontSizePct: number;
       color: string;
-      fontFamily: string;
-      fontWeight: number;
-      fontStyle: FontStyle;
-      pdfFontKey: PdfFontKey;
+      fontFamily: FontChoice;
+      bold?: boolean;
+      italic?: boolean;
+      underline?: boolean;
+      align?: TextAlign;
     }
   | {
       id: string;
@@ -128,11 +227,22 @@ type El =
       text: string;
       fontSizePct: number;
       color: string;
-      backgroundColor: string;
-      fontFamily: string;
-      fontWeight: number;
-      fontStyle: FontStyle;
-      pdfFontKey: PdfFontKey;
+      fontFamily: FontChoice;
+      bold?: boolean;
+      italic?: boolean;
+      underline?: boolean;
+      align?: TextAlign;
+      /** Sampled page-background color used to cover the original text,
+       *  so an edit blends into a colored/scanned page instead of leaving
+       *  a white rectangle. Falls back to white until sampling resolves.
+       *  User-overridable for backgrounds a single color can't match. */
+      bgColor: string;
+      /** When set and different from `bgColor`, the cover is drawn as a
+       *  top-(bgColor)-to-bottom-(bgColorBottom) gradient instead of a flat
+       *  fill, so a box sitting on a vertical gradient background doesn't
+       *  show as an obvious flat patch. Cleared (set equal to bgColor) by a
+       *  manual color override, which always flattens to one chosen color. */
+      bgColorBottom?: string;
     }
   | {
       id: string;
@@ -143,6 +253,10 @@ type El =
       wPct: number;
       hPct: number;
       color: string;
+      /** Only meaningful on 'whiteout': also strip the page's underlying text
+       *  layer (by flattening the page to an image) instead of just covering
+       *  it, so the original text isn't left selectable/copyable underneath. */
+      redact?: boolean;
     }
   | {
       id: string;
@@ -161,6 +275,17 @@ type El =
       type: 'pen';
       points: Pt[];
       color: string;
+    }
+  | {
+      id: string;
+      page: number;
+      type: 'field';
+      fieldKind: FieldKind;
+      name: string;
+      xPct: number;
+      yPct: number;
+      wPct: number;
+      hPct: number;
     };
 
 type Selected = { kind: 'element'; id: string } | null;
@@ -172,6 +297,15 @@ interface PdfTextItem {
   height: number;
   hasEOL?: boolean;
   fontName?: string;
+}
+
+interface PdfJsFontInfo {
+  name?: string;
+  loadedName?: string;
+  fallbackName?: string;
+  bold?: boolean;
+  black?: boolean;
+  italic?: boolean;
 }
 
 interface RawTextRun {
@@ -230,18 +364,24 @@ interface TesseractModule {
 
 const PREVIEW_SCALE = 1.6;
 const COLORS = ['#111827', '#dc2626', '#2563eb', '#16a34a', '#ca8a04', '#ffffff'];
+// A 1x1 white pixel, used as the thumbnail/preview image for a blank page
+// inserted in the editor (stretched to fill by the existing image styling).
+const BLANK_PAGE_DATA_URL =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const uid = () => Math.random().toString(36).slice(2);
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-function hexToRgb(hex: string) {
+function hexToRgbFloats(hex: string) {
   const n = parseInt(hex.slice(1), 16);
-  return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+  return { r: ((n >> 16) & 255) / 255, g: ((n >> 8) & 255) / 255, b: (n & 255) / 255 };
 }
 
 function inferTextAppearance(fontName?: string, fontFamily?: string): TextAppearance {
   const descriptor = `${fontName ?? ''} ${fontFamily ?? ''}`.toLowerCase();
   const isBold = /(bold|black|heavy|semibold|semi-bold|demi|medium)/.test(descriptor);
   const isItalic = /(italic|oblique)/.test(descriptor);
+  const isExplicitSerif = /(times|georgia|garamond|cambria)/.test(descriptor) ||
+    (/\bserif\b/.test(descriptor) && !/\bsans[- ]?serif\b/.test(descriptor));
 
   if (/(courier|mono|consolas|menlo|monaco)/.test(descriptor)) {
     return {
@@ -252,7 +392,7 @@ function inferTextAppearance(fontName?: string, fontFamily?: string): TextAppear
     };
   }
 
-  if (/(times|serif|georgia|garamond|cambria)/.test(descriptor)) {
+  if (isExplicitSerif) {
     return {
       fontFamily: '"Times New Roman", Times, serif',
       fontWeight: isBold ? 700 : 400,
@@ -267,6 +407,19 @@ function inferTextAppearance(fontName?: string, fontFamily?: string): TextAppear
     fontStyle: isItalic ? 'italic' : 'normal',
     pdfFontKey: isBold && isItalic ? 'helveticaBoldOblique' : isBold ? 'helveticaBold' : isItalic ? 'helveticaOblique' : 'helvetica',
   };
+}
+
+function hexToRgb(hex: string) {
+  const { r, g, b } = hexToRgbFloats(hex);
+  return rgb(r, g, b);
+}
+
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+function fontChoiceForAppearance(appearance: TextAppearance): FontChoice {
+  if (appearance.pdfFontKey.startsWith('times')) return 'serif';
+  if (appearance.pdfFontKey.startsWith('courier')) return 'mono';
+  return 'sans';
 }
 
 function isPdfTextItem(item: unknown): item is PdfTextItem {
@@ -355,6 +508,7 @@ async function extractTextBoxes(data: ArrayBuffer, scale: number): Promise<PdfTe
     try {
       const page = await doc.getPage(pageNumber);
       const viewport = page.getViewport({ scale });
+      await page.getOperatorList();
       const content = await page.getTextContent();
       const styles = (content as {
         styles?: Record<string, { fontFamily?: string; ascent?: number; descent?: number; vertical?: boolean }>;
@@ -365,7 +519,23 @@ async function extractTextBoxes(data: ArrayBuffer, scale: number): Promise<PdfTe
         if (!isPdfTextItem(item) || !item.str.trim()) continue;
         const textStyle = item.fontName ? styles[item.fontName] : undefined;
         if (textStyle?.vertical) continue;
-        const appearance = inferTextAppearance(item.fontName, textStyle?.fontFamily);
+        let fontInfo: PdfJsFontInfo | undefined;
+        if (item.fontName) {
+          try {
+            fontInfo = (page as unknown as { commonObjs?: { get: (id: string) => PdfJsFontInfo } }).commonObjs?.get(item.fontName);
+          } catch {
+            fontInfo = undefined;
+          }
+        }
+        const fontDescriptor = [
+          item.fontName,
+          fontInfo?.name,
+          fontInfo?.loadedName,
+          fontInfo?.fallbackName,
+          fontInfo?.bold || fontInfo?.black ? 'bold' : '',
+          fontInfo?.italic ? 'italic' : '',
+        ].filter(Boolean).join(' ');
+        const appearance = inferTextAppearance(fontDescriptor, textStyle?.fontFamily);
         const transform = util.transform(viewport.transform, item.transform);
         const fontSize = Math.max(Math.hypot(transform[2], transform[3]), Math.abs(item.height || 0) * scale, 4);
         const width = Math.max(Math.abs(item.width || 0) * scale, fontSize * 0.18, 1);
@@ -422,20 +592,6 @@ function loadImageSize(src: string): Promise<{ width: number; height: number }> 
 const DEFAULT_TEXT_COLOR = '#111827';
 const DEFAULT_PAGE_COLOR = '#ffffff';
 const DEFAULT_TEXT_APPEARANCE: TextAppearance = inferTextAppearance();
-const STANDARD_FONT_BY_KEY: Record<PdfFontKey, StandardFonts> = {
-  helvetica: StandardFonts.Helvetica,
-  helveticaBold: StandardFonts.HelveticaBold,
-  helveticaOblique: StandardFonts.HelveticaOblique,
-  helveticaBoldOblique: StandardFonts.HelveticaBoldOblique,
-  times: StandardFonts.TimesRoman,
-  timesBold: StandardFonts.TimesRomanBold,
-  timesItalic: StandardFonts.TimesRomanItalic,
-  timesBoldItalic: StandardFonts.TimesRomanBoldItalic,
-  courier: StandardFonts.Courier,
-  courierBold: StandardFonts.CourierBold,
-  courierOblique: StandardFonts.CourierOblique,
-  courierBoldOblique: StandardFonts.CourierBoldOblique,
-};
 
 interface ColorBucket {
   count: number;
@@ -475,17 +631,59 @@ function rgbToHex(color: { r: number; g: number; b: number }) {
   return `#${toHex(color.r)}${toHex(color.g)}${toHex(color.b)}`;
 }
 
+/** Darkest pixel (ink) + most-common pixel (background) in an ImageData
+ *  region, via 16-levels/channel quantized buckets so anti-aliasing noise
+ *  collapses into the true dominant color instead of splitting its vote. */
+function dominantColors(data: Uint8ClampedArray) {
+  let inkR = 17, inkG = 24, inkB = 39, inkLum = Infinity;
+  const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+    if (a < 200) continue;
+
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    if (luminance < inkLum) { inkLum = luminance; inkR = r; inkG = g; inkB = b; }
+
+    const key = `${r >> 4},${g >> 4},${b >> 4}`;
+    const bucket = buckets.get(key);
+    if (bucket) bucket.count++;
+    else buckets.set(key, { count: 1, r, g, b });
+  }
+
+  let bg = { count: 0, r: 255, g: 255, b: 255 };
+  for (const bucket of buckets.values()) if (bucket.count > bg.count) bg = bucket;
+
+  return { ink: { r: inkR, g: inkG, b: inkB }, background: { r: bg.r, g: bg.g, b: bg.b } };
+}
+
 /**
  * Approximates the original ink color of a detected text line by sampling
  * the darkest pixel inside its bounding box on the rendered page image —
  * so replacing text keeps looking like the source instead of always
  * turning near-black, regardless of whether it came from the PDF's text
  * layer or from OCR on a scanned page.
+ * Samples a detected text line's region on the rendered page image to recover
+ * enough color info to cover the original text without leaving an obvious
+ * flat-color patch pasted over a non-flat background:
+ *   - `ink`: the darkest pixel in the box (approximates the text color)
+ *   - `background`: the most common color across the whole box (used as a
+ *     flat fill, and as the "Cover color" swatch shown in the toolbar)
+ *   - `backgroundBottom`: the most common color in just the box's bottom
+ *     strip. When it differs noticeably from `background` (the top strip is
+ *     sampled implicitly via the whole-box dominant color skewing toward it),
+ *     the box likely sits on a vertical gradient rather than a flat color —
+ *     the caller then fills with a top-to-bottom gradient instead of a flat
+ *     rectangle. A genuinely flat background makes the two colors equal (or
+ *     very close), so this is a no-op there — same flat-fill behavior as
+ *     before, just also handling gradients, which flat sampling alone can't.
+ * Works the same whether the line came from the PDF text layer or from OCR.
  */
 function sampleTextColor(
   imageUrl: string,
   box: { xPct: number; yPct: number; wPct: number; hPct: number }
-): Promise<string> {
+): Promise<{ ink: string; background: string; backgroundBottom: string }> {
+  const fallback = { ink: DEFAULT_TEXT_COLOR, background: DEFAULT_PAGE_COLOR, backgroundBottom: DEFAULT_PAGE_COLOR };
   return new Promise((resolve) => {
     const image = new Image();
     image.onload = () => {
@@ -494,15 +692,15 @@ function sampleTextColor(
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        if (!ctx) return resolve(DEFAULT_TEXT_COLOR);
+        if (!ctx) return resolve(fallback);
 
         ctx.drawImage(image, 0, 0);
         const x = clamp(Math.round((box.xPct / 100) * canvas.width), 0, canvas.width - 1);
         const y = clamp(Math.round((box.yPct / 100) * canvas.height), 0, canvas.height - 1);
         const w = clamp(Math.round((box.wPct / 100) * canvas.width), 1, canvas.width - x);
         const h = clamp(Math.round((box.hPct / 100) * canvas.height), 1, canvas.height - y);
-        const { data } = ctx.getImageData(x, y, w, h);
 
+        const { data } = ctx.getImageData(x, y, w, h);
         const buckets = new Map<string, ColorBucket>();
         const edgeBuckets = new Map<string, ColorBucket>();
         const edgeDepth = Math.max(1, Math.min(3, Math.floor(Math.min(w, h) * 0.16)));
@@ -520,7 +718,7 @@ function sampleTextColor(
 
         const colors = [...buckets.values()].sort((a, b) => b.count - a.count);
         const backgroundBucket = [...edgeBuckets.values()].sort((a, b) => b.count - a.count)[0] ?? colors[0];
-        if (!backgroundBucket) return resolve(DEFAULT_TEXT_COLOR);
+        if (!backgroundBucket) return resolve(fallback);
         const background = bucketColor(backgroundBucket);
         const minimumInkPixels = Math.max(2, Math.floor((w * h) * 0.0015));
         const foreground = colors
@@ -529,12 +727,32 @@ function sampleTextColor(
           .filter((candidate) => candidate.distance >= 48)
           .sort((a, b) => (b.distance * Math.log2(b.bucket.count + 1)) - (a.distance * Math.log2(a.bucket.count + 1)))[0];
 
-        resolve(foreground ? rgbToHex(bucketColor(foreground.bucket)) : DEFAULT_TEXT_COLOR);
+        resolve({
+          ink: foreground ? rgbToHex(bucketColor(foreground.bucket)) : DEFAULT_TEXT_COLOR,
+          background: rgbToHex(background),
+          backgroundBottom: rgbToHex(background),
+        });
+        const whole = dominantColors(ctx.getImageData(x, y, w, h).data);
+        // Sample the bottom third separately (a thin box may be too short to
+        // usefully split top/bottom, so this only kicks in above a minimum
+        // height) to detect a vertical gradient without touching pixels
+        // outside the box itself — avoids risking picking up an adjacent
+        // line of text above/below.
+        const bottomStripH = Math.max(1, Math.round(h / 3));
+        const bottom = h >= 6
+          ? dominantColors(ctx.getImageData(x, y + h - bottomStripH, w, bottomStripH).data).background
+          : whole.background;
+
+        resolve({
+          ink: rgbToHex(whole.ink),
+          background: rgbToHex(whole.background),
+          backgroundBottom: rgbToHex(bottom),
+        });
       } catch {
-        resolve(DEFAULT_TEXT_COLOR);
+        resolve(fallback);
       }
     };
-    image.onerror = () => resolve(DEFAULT_TEXT_COLOR);
+    image.onerror = () => resolve(fallback);
     image.src = imageUrl;
   });
 }
@@ -664,6 +882,9 @@ function drawTextBlock({
   pageHeight,
   size,
   color,
+  singleLine = false,
+  align = 'left',
+  underline = false,
 }: {
   page: PDFPage;
   font: PDFFont;
@@ -675,20 +896,37 @@ function drawTextBlock({
   pageHeight: number;
   size: number;
   color: ReturnType<typeof rgb>;
+  /** Keep an edited detected line on one line (matching the on-screen editor)
+   *  instead of reflowing it into multiple lines. */
+  singleLine?: boolean;
+  /** Horizontal alignment of each line within `width`, matching the on-screen editor. */
+  align?: TextAlign;
+  underline?: boolean;
 }) {
   if (!text.trim()) return;
   const lineHeight = size * 1.16;
-  const lines = wrapText(text, font, size, width);
-  const maxLines = height ? Math.max(1, Math.floor((height + size * 0.35) / lineHeight)) : lines.length;
+  // A detected line is one line — collapse any newlines and never wrap, so
+  // editing it doesn't silently turn one line into two.
+  const lines = singleLine
+    ? [text.replace(/\s*\n\s*/g, ' ').trim()]
+    : wrapText(text, font, size, width);
+  const maxLines = !singleLine && height
+    ? Math.max(1, Math.floor((height + size * 0.35) / lineHeight))
+    : lines.length;
 
   lines.slice(0, maxLines).forEach((line, index) => {
-    page.drawText(line, {
-      x,
-      y: pageHeight - top - size - index * lineHeight,
-      size,
-      font,
-      color,
-    });
+    const lineWidth = font.widthOfTextAtSize(line, size);
+    const lineX = align === 'center' ? x + Math.max(0, width - lineWidth) / 2 : align === 'right' ? x + Math.max(0, width - lineWidth) : x;
+    const y = pageHeight - top - size - index * lineHeight;
+    page.drawText(line, { x: lineX, y, size, font, color });
+    if (underline) {
+      page.drawLine({
+        start: { x: lineX, y: y - size * 0.1 },
+        end: { x: lineX + lineWidth, y: y - size * 0.1 },
+        thickness: Math.max(0.6, size * 0.045),
+        color,
+      });
+    }
   });
 }
 
@@ -701,6 +939,7 @@ export function EditPdf() {
   const [pages, setPages] = useState<RenderedPageInfo[]>([]);
   const [current, setCurrent] = useState(0);
   const [tool, setTool] = useState<Tool>('editText');
+  const [workspacePanel, setWorkspacePanel] = useState<WorkspacePanel>('edit');
   const [color, setColor] = useState(COLORS[0]);
   const [els, setEls] = useState<El[]>([]);
   const [pastEls, setPastEls] = useState<El[][]>([]);
@@ -714,6 +953,12 @@ export function EditPdf() {
   const [overlaySize, setOverlaySize] = useState({ width: 0, height: 0 });
   const [focusElementId, setFocusElementId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+  // When saving a PDF that has fillable fields on it, offer to bake them into
+  // flat page content instead of leaving them as interactive AcroForm fields.
+  const [flattenFields, setFlattenFields] = useState(false);
+  const [signaturePanelOpen, setSignaturePanelOpen] = useState(false);
+  const [draftSignature, setDraftSignature] = useState<string | null>(null);
+  const [savedSignatures, setSavedSignatures] = useState<string[]>([]);
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -725,6 +970,8 @@ export function EditPdf() {
   const resizing = useRef<{ id: string; startX: number; startY: number; startW: number; startH: number } | null>(null);
   const textEditHistory = useRef<Set<string>>(new Set());
   const autoOcrAttempted = useRef<Set<number>>(new Set());
+  const fieldCounter = useRef(0);
+  const dragPageIndex = useRef<number | null>(null);
 
   useEffect(() => {
     const node = overlayRef.current;
@@ -803,6 +1050,88 @@ export function EditPdf() {
     });
   };
 
+  // Every page-structure change (reorder/delete/insert/duplicate) must keep
+  // each element's `page` index pointing at the same visual page it was
+  // placed on, since elements are addressed by position in `pages`, not by
+  // a stable page id. `indexMap` gives the new index for each old index —
+  // `null` means that page (and its elements) is gone.
+  const remapPagesAndEls = (newPages: RenderedPageInfo[], indexMap: Map<number, number | null>) => {
+    setPages(newPages);
+    commitEls((prev) =>
+      prev
+        .map((el) => {
+          const mapped = indexMap.get(el.page);
+          if (mapped === undefined) return el;
+          if (mapped === null) return null;
+          return { ...el, page: mapped };
+        })
+        .filter((el): el is El => el !== null)
+    );
+  };
+
+  const rotatePageAt = (index: number) => {
+    setPages((prev) => prev.map((p, i) => (i === index ? { ...p, rotation: (p.rotation + 90) % 360 } : p)));
+  };
+
+  const deletePageAt = (index: number) => {
+    if (pages.length <= 1) return;
+    const indexMap = new Map<number, number | null>();
+    pages.forEach((_, i) => indexMap.set(i, i === index ? null : i < index ? i : i - 1));
+    const newPages = pages.filter((_, i) => i !== index);
+    remapPagesAndEls(newPages, indexMap);
+    setCurrent((c) => clamp(c > index ? c - 1 : c, 0, newPages.length - 1));
+    setSelected(null);
+  };
+
+  const duplicatePageAt = (index: number) => {
+    const source = pages[index];
+    if (!source) return;
+    // The duplicate shares the source's rendered image and original-PDF
+    // index (export copies that source page again); it starts with no
+    // elements of its own — only the original page's elements stay in place.
+    const copy: RenderedPageInfo = { ...source, textBoxes: [] };
+    const indexMap = new Map<number, number | null>();
+    pages.forEach((_, i) => indexMap.set(i, i <= index ? i : i + 1));
+    const newPages = [...pages.slice(0, index + 1), copy, ...pages.slice(index + 1)];
+    remapPagesAndEls(newPages, indexMap);
+  };
+
+  const insertBlankPageAt = (index: number) => {
+    const ref = pages[index] ?? pages[0];
+    if (!ref) return;
+    const blank: RenderedPageInfo = {
+      url: BLANK_PAGE_DATA_URL,
+      w: ref.w,
+      h: ref.h,
+      textBoxes: [],
+      originalIndex: -1,
+      rotation: 0,
+    };
+    const indexMap = new Map<number, number | null>();
+    pages.forEach((_, i) => indexMap.set(i, i <= index ? i : i + 1));
+    const newPages = [...pages.slice(0, index + 1), blank, ...pages.slice(index + 1)];
+    remapPagesAndEls(newPages, indexMap);
+    setCurrent(index + 1);
+  };
+
+  const reorderPage = (from: number, to: number) => {
+    if (from === to) return;
+    const newPages = [...pages];
+    const [moved] = newPages.splice(from, 1);
+    newPages.splice(to, 0, moved);
+
+    const indexMap = new Map<number, number | null>();
+    pages.forEach((_, i) => {
+      let newIndex: number;
+      if (i === from) newIndex = to;
+      else if (from < to) newIndex = i > from && i <= to ? i - 1 : i;
+      else newIndex = i >= to && i < from ? i + 1 : i;
+      indexMap.set(i, newIndex);
+    });
+    remapPagesAndEls(newPages, indexMap);
+    setCurrent((c) => indexMap.get(c) ?? c);
+  };
+
   const onFiles = async (files: File[]) => {
     setError(null);
     setResult(null);
@@ -842,6 +1171,8 @@ export function EditPdf() {
           w: p.width,
           h: p.height,
           textBoxes: textBoxes[p.index] ?? [],
+          originalIndex: p.index,
+          rotation: 0,
         });
       }
       setPages(infos);
@@ -892,7 +1223,8 @@ export function EditPdf() {
         text: 'Text',
         fontSizePct: 2.4,
         color: color === '#ffffff' ? '#111827' : color,
-        ...DEFAULT_TEXT_APPEARANCE,
+        fontFamily: 'sans',
+        align: 'left',
       },
     ]);
     setSelected({ kind: 'element', id });
@@ -904,11 +1236,43 @@ export function EditPdf() {
     const pageUrl = pages[box.page]?.url;
     if (!pageUrl) return;
 
-    Promise.all([sampleTextColor(pageUrl, box), sampleBackgroundColor(pageUrl, box)]).then(([sampledColor, backgroundColor]) => {
+    Promise.all([sampleTextColor(pageUrl, box), sampleBackgroundColor(pageUrl, box)]).then(
+      ([{ ink, backgroundBottom }, background]) => {
       updateEl(id, (el) =>
-        el.type === 'replaceText' ? { ...el, color: sampledColor, backgroundColor } : el
+        el.type === 'replaceText' ? { ...el, color: ink, bgColor: background, bgColorBottom: backgroundBottom } : el
       );
-    });
+      }
+    );
+    // Stay in the text tool (like editSourceText does for detected lines) so
+    // clicking this box — or clicking elsewhere to add another one — keeps
+    // editing/placing text instead of dropping into Move mode, where the
+    // next click would drag the box instead of typing into it.
+  };
+
+  const createField = (fieldTool: FieldTool, xPct: number, yPct: number) => {
+    const fieldKind = FIELD_KIND_BY_TOOL[fieldTool];
+    const id = uid();
+    fieldCounter.current += 1;
+    // Default sizes roughly match what each field kind typically needs on a
+    // form (checkboxes are square and small, signatures are wide and short).
+    const wPct = fieldKind === 'checkbox' ? 3.5 : fieldKind === 'signature' ? 26 : fieldKind === 'initials' ? 10 : 20;
+    const hPct = fieldKind === 'checkbox' ? 2.2 : 3.6;
+    commitEls((prev) => [
+      ...prev,
+      {
+        id,
+        page: current,
+        type: 'field',
+        fieldKind,
+        name: `${fieldKind}_${fieldCounter.current}`,
+        xPct: clamp(xPct - wPct / 2, 0, 100 - wPct),
+        yPct: clamp(yPct - hPct / 2, 0, 100 - hPct),
+        wPct,
+        hPct,
+      },
+    ]);
+    setSelected({ kind: 'element', id });
+    setTool('select');
   };
 
   const editSourceText = (box: PdfTextBox) => {
@@ -937,11 +1301,11 @@ export function EditPdf() {
         text: box.text,
         fontSizePct: box.fontSizePct,
         color: DEFAULT_TEXT_COLOR,
-        backgroundColor: DEFAULT_PAGE_COLOR,
-        fontFamily: box.fontFamily,
-        fontWeight: box.fontWeight,
-        fontStyle: box.fontStyle,
-        pdfFontKey: box.pdfFontKey,
+        bgColor: DEFAULT_PAGE_COLOR,
+        fontFamily: fontChoiceForAppearance(box),
+        bold: box.fontWeight >= 600,
+        italic: box.fontStyle === 'italic',
+        align: 'left',
       },
     ]);
     setSelected({ kind: 'element', id });
@@ -959,16 +1323,38 @@ export function EditPdf() {
       return;
     }
 
-    if (tool === 'whiteout' || tool === 'highlight' || tool === 'rect') {
+    if (tool === 'whiteout' || tool === 'redact' || tool === 'highlight' || tool === 'rect') {
       const id = uid();
+      const elType: RectTool = tool === 'redact' ? 'whiteout' : tool;
       drafting.current = { id, startX: xPct, startY: yPct };
       pushHistorySnapshot();
       setEls((prev) => [
         ...prev,
-        { id, page: current, type: tool, xPct, yPct, wPct: 0, hPct: 0, color: tool === 'whiteout' ? DEFAULT_PAGE_COLOR : color },
+        {
+          id,
+          page: current,
+          type: elType,
+          xPct,
+          yPct,
+          wPct: 0,
+          hPct: 0,
+          color: tool === 'whiteout' ? DEFAULT_PAGE_COLOR : color,
+          redact: tool === 'redact',
+        },
       ]);
       setSelected({ kind: 'element', id });
       overlayRef.current?.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    if (
+      tool === 'field-text' ||
+      tool === 'field-signature' ||
+      tool === 'field-initials' ||
+      tool === 'field-date' ||
+      tool === 'field-checkbox'
+    ) {
+      createField(tool, xPct, yPct);
       return;
     }
 
@@ -1105,19 +1491,6 @@ export function EditPdf() {
     );
   };
 
-  const applyColor = (nextColor: string) => {
-    setColor(nextColor);
-    if (!selectedElement || selectedElement.type === 'image') return;
-    commitUpdateEl(selectedElement.id, (el) => ('color' in el ? { ...el, color: nextColor } : el));
-  };
-
-  const applyBackgroundColor = (nextColor: string) => {
-    if (!selectedElement || selectedElement.type !== 'replaceText') return;
-    commitUpdateEl(selectedElement.id, (el) =>
-      el.type === 'replaceText' ? { ...el, backgroundColor: nextColor } : el
-    );
-  };
-
   const rematchSelectedSource = () => {
     if (!selectedElement || selectedElement.type !== 'replaceText') return;
     const source = pages[selectedElement.page]?.textBoxes.find((box) => box.id === selectedElement.sourceId);
@@ -1160,6 +1533,59 @@ export function EditPdf() {
     setSelected(null);
   };
 
+  const setSelectedFontFamily = (fontFamily: FontChoice) => {
+    if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'text' || el.type === 'replaceText' ? { ...el, fontFamily } : el
+    );
+  };
+
+  const setSelectedTextColor = (c: string) => {
+    setColor(c);
+    if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'text' || el.type === 'replaceText' ? { ...el, color: c } : el
+    );
+  };
+
+  const setSelectedBgColor = (c: string) => {
+    if (!selectedElement || selectedElement.type !== 'replaceText') return;
+    // A manual override always flattens to one chosen color — clear any
+    // auto-detected gradient so this picker stays the source of truth once
+    // the user has decided the auto-match wasn't right.
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'replaceText' ? { ...el, bgColor: c, bgColorBottom: c } : el
+    );
+  };
+
+  const toggleSelectedBold = () => {
+    if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'text' || el.type === 'replaceText' ? { ...el, bold: !el.bold } : el
+    );
+  };
+
+  const toggleSelectedItalic = () => {
+    if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'text' || el.type === 'replaceText' ? { ...el, italic: !el.italic } : el
+    );
+  };
+
+  const toggleSelectedUnderline = () => {
+    if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'text' || el.type === 'replaceText' ? { ...el, underline: !el.underline } : el
+    );
+  };
+
+  const setSelectedAlign = (align: TextAlign) => {
+    if (!selectedElement || (selectedElement.type !== 'text' && selectedElement.type !== 'replaceText')) return;
+    commitUpdateEl(selectedElement.id, (el) =>
+      el.type === 'text' || el.type === 'replaceText' ? { ...el, align } : el
+    );
+  };
+
   const handleImageFile = async (imageFile: File | undefined) => {
     if (!imageFile || !page) return;
     setError(null);
@@ -1189,6 +1615,35 @@ export function EditPdf() {
       console.error(e);
       setError('Could not add that image. Use a PNG or JPG file.');
     }
+  };
+
+  // A drawn/typed signature is placed as a regular image element, so it's
+  // draggable/resizable like any other image and needs no special export
+  // handling — this also means the same signature can be dropped onto
+  // multiple pages by clicking it again in the saved-signatures tray.
+  const placeSignature = async (dataUrl: string) => {
+    if (!page) return;
+    try {
+      const size = await loadImageSize(dataUrl);
+      const id = uid();
+      const wPct = 28;
+      const hPct = clamp(wPct * (size.height / size.width) * (page.w / page.h), 3, 40);
+      commitEls((prev) => [
+        ...prev,
+        { id, page: current, type: 'image', xPct: 36, yPct: 72, wPct, hPct, dataUrl, mime: 'image/png' },
+      ]);
+      setSelected({ kind: 'element', id });
+      setTool('select');
+    } catch (e) {
+      console.error(e);
+      setError('Could not place that signature.');
+    }
+  };
+
+  const confirmDraftSignature = () => {
+    if (!draftSignature) return;
+    setSavedSignatures((prev) => (prev.includes(draftSignature) ? prev : [draftSignature, ...prev]).slice(0, 6));
+    void placeSignature(draftSignature);
   };
 
   const runOcrOnCurrentPage = async (auto = false) => {
@@ -1274,20 +1729,78 @@ export function EditPdf() {
     setError(null);
 
     try {
-      const doc = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
-      const embeddedFonts: Partial<Record<PdfFontKey, PDFFont>> = {};
-      const getFont = async (fontKey: PdfFontKey) => {
-        let font = embeddedFonts[fontKey];
-        if (!font) {
-          font = await doc.embedFont(STANDARD_FONT_BY_KEY[fontKey]);
-          embeddedFonts[fontKey] = font;
+      const srcDoc = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
+      const outDoc = await PDFDocument.create();
+      // Embed every font-family/bold/italic combination up front (all built
+      // into pdf-lib as StandardFonts, so this is cheap) so exported text
+      // always matches the family + bold/italic choice made in the editor.
+      const fontChoices = Object.keys(STANDARD_FONT_MAP) as FontChoice[];
+      const fonts = {} as Record<FontChoice, Record<FontVariant, PDFFont>>;
+      for (const family of fontChoices) {
+        const variants = STANDARD_FONT_MAP[family];
+        fonts[family] = {
+          regular: await outDoc.embedFont(variants.regular),
+          bold: await outDoc.embedFont(variants.bold),
+          italic: await outDoc.embedFont(variants.italic),
+          boldItalic: await outDoc.embedFont(variants.boldItalic),
+        };
+      }
+      const fontFor = (el: { fontFamily: FontChoice; bold?: boolean; italic?: boolean }) =>
+        fonts[el.fontFamily][fontVariantFor(el.bold, el.italic)];
+
+      // Build the output document's pages in the sidebar's current order.
+      // `remapPagesAndEls` keeps every element's `page` index in sync with
+      // this same order whenever pages are reordered/inserted/deleted/
+      // duplicated, so `outPages[el.page]` below always points at the right
+      // page without needing a separate old-index -> new-index lookup here.
+      const outPages: PDFPage[] = [];
+      for (const info of pages) {
+        let outPage: PDFPage;
+        if (info.originalIndex < 0) {
+          // A blank page inserted in the editor — no source page to copy.
+          outPage = outDoc.addPage([info.w / PREVIEW_SCALE, info.h / PREVIEW_SCALE]);
+        } else {
+          const [copied] = await outDoc.copyPages(srcDoc, [info.originalIndex]);
+          outDoc.addPage(copied);
+          outPage = copied;
         }
-        return font;
-      };
-      const docPages = doc.getPages();
+        if (info.rotation) {
+          outPage.setRotation(degrees((outPage.getRotation().angle + info.rotation) % 360));
+        }
+        outPages.push(outPage);
+      }
+
+      // A "Redact" whiteout doesn't just cover the original text visually —
+      // it must stop the original text from being selectable/searchable in
+      // the exported PDF. pdf-lib has no API to strip individual text
+      // operators from an existing content stream, so the only reliable way
+      // is to replace the whole page with a fresh, image-only page built
+      // from the already-rendered preview (which has no text layer at all).
+      // Any edit elements on that page (added text, cover rects, etc.) are
+      // then drawn on top of that image in the loop below, same as always.
+      const redactedPages = new Set(
+        els
+          .filter((el): el is El & { type: 'whiteout'; redact: true } => el.type === 'whiteout' && Boolean(el.redact))
+          .map((el) => el.page)
+      );
+      for (const pageIndex of redactedPages) {
+        const info = pages[pageIndex];
+        const target = outPages[pageIndex];
+        if (!info || !target || info.originalIndex < 0) continue;
+        const { width: W, height: H } = target.getSize();
+        const rasterBytes = await fetch(info.url).then((res) => res.arrayBuffer());
+        const rasterImage = await outDoc.embedJpg(rasterBytes);
+        const idx = outDoc.getPages().indexOf(target);
+        outDoc.removePage(idx);
+        const blankPage = outDoc.insertPage(idx, [W, H]);
+        blankPage.drawImage(rasterImage, { x: 0, y: 0, width: W, height: H });
+        outPages[pageIndex] = blankPage;
+      }
+
+      const form = hasFields ? outDoc.getForm() : null;
 
       for (const el of els) {
-        const pdfPage = docPages[el.page];
+        const pdfPage = outPages[el.page];
         if (!pdfPage) continue;
         const { width: W, height: H } = pdfPage.getSize();
 
@@ -1298,20 +1811,43 @@ export function EditPdf() {
           const y = H - (el.yPct / 100) * H - h;
           const padX = W * 0.002;
           const padY = H * 0.0015;
-          pdfPage.drawRectangle({
-            x: x - padX,
-            y: y - padY,
-            width: w + padX * 2,
-            height: h + padY * 2,
-            color: el.type === 'replaceText' ? hexToRgb(el.backgroundColor) : hexToRgb(el.color),
-          });
+          const maskX = x - padX;
+          const maskY = y - padY;
+          const maskW = w + padX * 2;
+          const maskH = h + padY * 2;
+
+          if (el.type === 'replaceText' && el.bgColorBottom && el.bgColorBottom !== el.bgColor) {
+            // A detected vertical gradient — cover with matching thin bands
+            // instead of one flat rectangle so the patch doesn't stand out
+            // against a gradient background.
+            const top = hexToRgbFloats(el.bgColor);
+            const bottom = hexToRgbFloats(el.bgColorBottom);
+            const bands = 14;
+            const bandH = maskH / bands;
+            for (let i = 0; i < bands; i++) {
+              const t = i / (bands - 1);
+              pdfPage.drawRectangle({
+                x: maskX,
+                // Top of the box has the higher y in PDF space, so band 0
+                // (top color) starts at maskY + maskH and works downward.
+                y: maskY + maskH - (i + 1) * bandH,
+                width: maskW,
+                height: bandH + 0.75, // slight overlap to avoid visible seams between bands
+                color: rgb(lerp(top.r, bottom.r, t), lerp(top.g, bottom.g, t), lerp(top.b, bottom.b, t)),
+              });
+            }
+          } else {
+            // Cover the original text with the sampled flat page background
+            // (falling back to white for a plain Erase) so the edit blends in.
+            const maskColor = el.type === 'replaceText' ? hexToRgb(el.bgColor) : hexToRgb(el.color);
+            pdfPage.drawRectangle({ x: maskX, y: maskY, width: maskW, height: maskH, color: maskColor });
+          }
 
           if (el.type === 'replaceText') {
             const size = (el.fontSizePct / 100) * H;
-            const font = await getFont(el.pdfFontKey);
             drawTextBlock({
               page: pdfPage,
-              font,
+              font: fontFor(el),
               text: el.text,
               x,
               top: (el.yPct / 100) * H + size * 0.08,
@@ -1320,14 +1856,16 @@ export function EditPdf() {
               pageHeight: H,
               size,
               color: hexToRgb(el.color),
+              singleLine: true,
+              align: el.align,
+              underline: el.underline,
             });
           }
         } else if (el.type === 'text') {
           const size = (el.fontSizePct / 100) * H;
-          const font = await getFont(el.pdfFontKey);
           drawTextBlock({
             page: pdfPage,
-            font,
+            font: fontFor(el),
             text: el.text,
             x: (el.xPct / 100) * W,
             top: (el.yPct / 100) * H,
@@ -1335,6 +1873,8 @@ export function EditPdf() {
             pageHeight: H,
             size,
             color: hexToRgb(el.color),
+            align: el.align,
+            underline: el.underline,
           });
         } else if (el.type === 'highlight' || el.type === 'rect') {
           const x = (el.xPct / 100) * W;
@@ -1348,7 +1888,7 @@ export function EditPdf() {
           }
         } else if (el.type === 'image') {
           const bytes = await fetch(el.dataUrl).then((res) => res.arrayBuffer());
-          const image = el.mime === 'image/png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+          const image = el.mime === 'image/png' ? await outDoc.embedPng(bytes) : await outDoc.embedJpg(bytes);
           const w = (el.wPct / 100) * W;
           const h = (el.hPct / 100) * H;
           pdfPage.drawImage(image, {
@@ -1368,10 +1908,38 @@ export function EditPdf() {
               color: hexToRgb(el.color),
             });
           }
+        } else if (el.type === 'field' && form) {
+          const x = (el.xPct / 100) * W;
+          const w = (el.wPct / 100) * W;
+          const h = (el.hPct / 100) * H;
+          const y = H - (el.yPct / 100) * H - h;
+
+          if (el.fieldKind === 'checkbox') {
+            const checkbox = form.createCheckBox(el.name);
+            checkbox.addToPage(pdfPage, { x, y, width: w, height: h });
+          } else {
+            // pdf-lib has no dedicated signature-field widget, so signature/
+            // initials/date fields are text fields styled to read as fillable
+            // placeholders — the same "click to fill" affordance iLovePDF
+            // gives, just backed by a real AcroForm text field.
+            const textField = form.createTextField(el.name);
+            textField.addToPage(pdfPage, {
+              x,
+              y,
+              width: w,
+              height: h,
+              borderWidth: 1,
+              borderColor: rgb(0.02, 0.5, 0.9),
+              backgroundColor: rgb(0.93, 0.97, 1),
+            });
+            textField.setFontSize(Math.max(7, Math.min(14, h * 0.55)));
+          }
         }
       }
 
-      const bytes = await doc.save();
+      if (form && flattenFields) form.flatten();
+
+      const bytes = await outDoc.save();
       const blob = new Blob([bytes as BlobPart], { type: 'application/pdf' });
       setResult({ blob, name: `${baseName(file.name)}-edited.pdf`, size: blob.size });
     } catch (e) {
@@ -1395,6 +1963,8 @@ export function EditPdf() {
     setOcrStatus(null);
     setCurrent(0);
     setTool('editText');
+    setWorkspacePanel('edit');
+    setSignaturePanelOpen(false);
     setZoom(1);
     textEditHistory.current.clear();
     autoOcrAttempted.current.clear();
@@ -1468,14 +2038,25 @@ export function EditPdf() {
   }
 
   const tools: [Tool, React.ReactNode, string][] = [
-    ['editText', <TextCursorInput key="edit" className="h-4 w-4" />, 'Edit detected text'],
-    ['select', <MousePointer2 key="select" className="h-4 w-4" />, 'Move'],
+    ['editText', <TextCursorInput key="edit" className="h-4 w-4" />, 'Edit text'],
+    ['select', <MousePointer2 key="select" className="h-4 w-4" />, 'Select'],
     ['text', <Type key="text" className="h-4 w-4" />, 'Add text'],
     ['whiteout', <Eraser key="erase" className="h-4 w-4" />, 'Erase'],
+    ['redact', <ShieldOff key="redact" className="h-4 w-4" />, 'Redact'],
     ['highlight', <Highlighter key="highlight" className="h-4 w-4" />, 'Highlight'],
-    ['rect', <Square key="rect" className="h-4 w-4" />, 'Box'],
+    ['rect', <Square key="rect" className="h-4 w-4" />, 'Rectangle'],
     ['pen', <Pen key="pen" className="h-4 w-4" />, 'Draw'],
   ];
+
+  const fieldTools: [Tool, React.ReactNode, string][] = [
+    ['field-text', <TextCursorInput key="field-text" className="h-4 w-4" />, 'Text field'],
+    ['field-signature', <PenTool key="field-signature" className="h-4 w-4" />, 'Signature field'],
+    ['field-initials', <PenTool key="field-initials" className="h-4 w-4" />, 'Initials field'],
+    ['field-date', <Calendar key="field-date" className="h-4 w-4" />, 'Date field'],
+    ['field-checkbox', <CheckSquare key="field-checkbox" className="h-4 w-4" />, 'Checkbox field'],
+  ];
+
+  const hasFields = els.some((el) => el.type === 'field');
 
   return (
     <PdfToolShell>
@@ -1491,37 +2072,102 @@ export function EditPdf() {
       />
 
       <div className="sticky top-2 z-20 rounded-[1.25rem] border border-[#d6e0ec] bg-white/95 p-2 shadow-xl shadow-[#10243e]/10 backdrop-blur">
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            {tools.map(([t, icon, label]) => (
+        <div className="mb-2 flex items-center gap-1 border-b border-[#d6e0ec] px-1 pb-2">
+          {([
+            ['edit', 'Edit & annotate'],
+            ['forms', 'Forms & sign'],
+          ] as const).map(([panel, label]) => (
+            <button
+              key={panel}
+              type="button"
+              onClick={() => {
+                setWorkspacePanel(panel);
+                setSelected(null);
+                setTool(panel === 'edit' ? 'editText' : 'select');
+                if (panel === 'edit') setSignaturePanelOpen(false);
+              }}
+              aria-pressed={workspacePanel === panel}
+              className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
+                workspacePanel === panel ? 'bg-[#10243e] text-white' : 'text-[#52677f] hover:bg-[#f1f6fc]'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+          <span className="ml-auto hidden text-[10px] font-bold text-[#8292a6] md:block">
+            {workspacePanel === 'edit' ? 'Click text on the page to change it' : 'Add fields or place a signature'}
+          </span>
+        </div>
+
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-1">
+          {workspacePanel === 'edit' ? (
+            <>
+              {tools.map(([t, icon, label]) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTool(t)}
+                  title={label}
+                  aria-label={label}
+                  className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition-all ${
+                    tool === t
+                      ? 'border-[#1463ff] bg-[#1463ff] text-white shadow-sm shadow-[#1463ff]/20'
+                      : 'border-[#d6e0ec] bg-white text-[#52677f] hover:border-[#1463ff]/50 hover:text-[#10243e]'
+                  }`}
+                >
+                  {icon}
+                  <span>{label}</span>
+                </button>
+              ))}
               <button
-                key={t}
                 type="button"
-                onClick={() => setTool(t)}
-                title={label}
-                aria-label={label}
-                className={`flex h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-all sm:w-auto sm:gap-1.5 sm:px-3 ${
-                  tool === t
-                    ? 'border-[#1463ff] bg-[#1463ff] text-white shadow-sm shadow-[#1463ff]/20'
-                    : 'border-[#d6e0ec] bg-white text-[#52677f] hover:border-[#1463ff]/50 hover:text-[#10243e]'
+                onClick={() => imageInputRef.current?.click()}
+                title="Add image"
+                aria-label="Add image"
+                className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#d6e0ec] bg-white px-3 text-xs font-bold text-[#52677f] transition-all hover:border-[#1463ff]/50 hover:text-[#10243e]"
+              >
+                <ImagePlus className="h-4 w-4" />
+                <span>Image</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setSignaturePanelOpen((value) => !value)}
+                title="Create signature"
+                aria-label="Create signature"
+                className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition-all ${
+                  signaturePanelOpen
+                    ? 'border-[#1463ff] bg-[#1463ff] text-white'
+                    : 'border-[#d6e0ec] bg-white text-[#52677f] hover:border-[#1463ff]/50'
                 }`}
               >
-                {icon}
-                <span className="hidden text-xs sm:inline">{label}</span>
+                <PenTool className="h-4 w-4" />
+                Signature
               </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              title="Add image"
-              aria-label="Add image"
-              className="flex h-10 min-w-10 items-center justify-center rounded-lg border border-[#d6e0ec] bg-white px-2 text-sm font-bold text-[#52677f] transition-all hover:border-[#1463ff]/50 hover:text-[#10243e] sm:gap-1.5 sm:px-3"
-            >
-              <ImagePlus className="h-4 w-4" />
-              <span className="hidden text-xs sm:inline">Image</span>
-            </button>
-          </div>
+              {fieldTools.map(([t, icon, label]) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTool(t)}
+                  title={label}
+                  aria-label={label}
+                  className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition-all ${
+                    tool === t
+                      ? 'border-[#1463ff] bg-[#1463ff] text-white'
+                      : 'border-[#d6e0ec] bg-white text-[#52677f] hover:border-[#1463ff]/50'
+                  }`}
+                >
+                  {icon}
+                  <span>{label}</span>
+                </button>
+              ))}
+            </>
+          )}
+        </div>
 
+        <div className="mt-2 flex flex-col gap-2 border-t border-slate-100 pt-2 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               type="button"
@@ -1592,24 +2238,41 @@ export function EditPdf() {
         </div>
 
         <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-[#d6e0ec] pt-2">
-          <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8292a6]">Text color</span>
-          {COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => applyColor(c)}
-              title={`Color ${c}`}
-              aria-label={`Color ${c}`}
-              className={`h-7 w-7 rounded-full border transition-transform ${
-                color === c ? 'border-slate-900 ring-2 ring-slate-200' : 'border-slate-200'
-              }`}
-              style={{ backgroundColor: c }}
-            />
-          ))}
+          {workspacePanel === 'edit' && (
+            <>
+              <span className="mr-1 text-[10px] font-black uppercase tracking-[0.16em] text-[#8292a6]">Color</span>
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setSelectedTextColor(c)}
+                  title={`Color ${c}`}
+                  aria-label={`Color ${c}`}
+                  className={`h-7 w-7 rounded-full border transition-transform ${
+                    color === c ? 'border-slate-900 ring-2 ring-slate-200' : 'border-slate-200'
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+            </>
+          )}
 
           {selectedElement && (selectedElement.type === 'text' || selectedElement.type === 'replaceText') && (
             <>
               <div className="mx-1 h-7 w-px bg-slate-200" />
+              <label className="sr-only" htmlFor="font-family">Font</label>
+              <select
+                id="font-family"
+                value={selectedElement.fontFamily}
+                onChange={(e) => setSelectedFontFamily(e.target.value as FontChoice)}
+                title="Font"
+                aria-label="Font"
+                className="h-9 rounded-md border border-slate-200 bg-slate-50 px-2 text-xs font-bold text-slate-600 hover:border-rose-300"
+              >
+                {(Object.keys(FONT_LABELS) as FontChoice[]).map((f) => (
+                  <option key={f} value={f}>{FONT_LABELS[f]}</option>
+                ))}
+              </select>
               <button
                 type="button"
                 title="Smaller text"
@@ -1630,6 +2293,50 @@ export function EditPdf() {
                 <Plus className="h-4 w-4" />
                 Text
               </button>
+
+              <div className="mx-1 h-7 w-px bg-slate-200" />
+
+              {([
+                ['bold', Bold, 'Bold', toggleSelectedBold, Boolean(selectedElement.bold)],
+                ['italic', Italic, 'Italic', toggleSelectedItalic, Boolean(selectedElement.italic)],
+                ['underline', Underline, 'Underline', toggleSelectedUnderline, Boolean(selectedElement.underline)],
+              ] as const).map(([key, Icon, label, onToggle, active]) => (
+                <button
+                  key={key}
+                  type="button"
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={active}
+                  onClick={onToggle}
+                  className={`flex h-9 w-9 items-center justify-center rounded-md border text-xs font-bold transition-all ${
+                    active ? 'border-rose-600 bg-rose-600 text-white' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
+
+              {([
+                ['left', AlignLeft, 'Align left'],
+                ['center', AlignCenter, 'Align center'],
+                ['right', AlignRight, 'Align right'],
+              ] as const).map(([value, Icon, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  title={label}
+                  aria-label={label}
+                  aria-pressed={(selectedElement.align ?? 'left') === value}
+                  onClick={() => setSelectedAlign(value)}
+                  className={`flex h-9 w-9 items-center justify-center rounded-md border text-xs font-bold transition-all ${
+                    (selectedElement.align ?? 'left') === value
+                      ? 'border-rose-600 bg-rose-600 text-white'
+                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-rose-300'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </button>
+              ))}
             </>
           )}
 
@@ -1665,8 +2372,8 @@ export function EditPdf() {
                 Background
                 <input
                   type="color"
-                  value={selectedElement.backgroundColor}
-                  onChange={(event) => applyBackgroundColor(event.target.value)}
+                  value={selectedElement.bgColor}
+                  onChange={(event) => setSelectedBgColor(event.target.value)}
                   className="h-6 w-7 cursor-pointer rounded border-0 bg-transparent p-0"
                   aria-label="Replacement background color"
                 />
@@ -1692,6 +2399,47 @@ export function EditPdf() {
           </button>
         </div>
       </div>
+
+      {signaturePanelOpen && (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">
+              Signature — click &quot;Add to page&quot; to place it, then click again to place on other pages
+            </span>
+            <button
+              type="button"
+              onClick={() => setSignaturePanelOpen(false)}
+              className="text-xs font-bold text-slate-400 hover:text-rose-600"
+            >
+              Close
+            </button>
+          </div>
+
+          <SignaturePad onChange={setDraftSignature} />
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            {savedSignatures.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wide text-slate-400">Reuse</span>
+                {savedSignatures.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => void placeSignature(s)}
+                    title="Place this signature again"
+                    className="h-10 w-16 rounded border border-slate-200 bg-white p-0.5 hover:border-rose-300"
+                  >
+                    <img src={s} alt="Saved signature" className="h-full w-full object-contain" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <PrimaryButton onClick={confirmDraftSignature} disabled={!draftSignature}>
+              Add to page
+            </PrimaryButton>
+          </div>
+        </div>
+      )}
 
       {ocrStatus && (
         <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm font-semibold text-sky-800">
@@ -1721,7 +2469,13 @@ export function EditPdf() {
               Width {Math.round(selectedElement.wPct)}%
             </span>
           )}
-          <span className="text-[#0f52d4]">Type directly in the text. Use the small handles to move or resize it.</span>
+          <span className="text-[#0f52d4]">
+            {selectedElement.type === 'replaceText'
+              ? 'Type the replacement directly. The original size and style stay selected.'
+              : selectedElement.type === 'text'
+                ? 'Type directly, then use the handles only if you need to move or resize it.'
+                : 'Drag to position this item, or use the corner handle to resize it.'}
+          </span>
         </div>
       )}
 
@@ -1733,23 +2487,82 @@ export function EditPdf() {
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-x-visible lg:pb-0">
             {pages.map((p, index) => (
-              <button
-                key={p.url}
-                type="button"
-                onClick={() => {
-                  setCurrent(index);
-                  setSelected(null);
+              <div
+                key={index}
+                draggable
+                onDragStart={() => {
+                  dragPageIndex.current = index;
                 }}
-                className={`min-w-20 rounded-xl border bg-white p-1 text-left transition-all lg:min-w-0 ${
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const from = dragPageIndex.current;
+                  dragPageIndex.current = null;
+                  if (from !== null) reorderPage(from, index);
+                }}
+                className={`min-w-20 shrink-0 cursor-grab rounded-xl border bg-white p-1 transition-all active:cursor-grabbing lg:min-w-0 ${
                   index === current
                     ? 'border-[#1463ff] shadow-sm shadow-[#1463ff]/20'
                     : 'border-[#d6e0ec] hover:border-[#1463ff]/45'
                 }`}
-                aria-label={`Go to page ${index + 1}`}
               >
-                <img src={p.url} alt={`Page ${index + 1} thumbnail`} className="h-24 w-full rounded-lg object-cover lg:h-auto" />
-                <span className="mt-1 block text-center text-[10px] font-black text-[#52677f]">Page {index + 1}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrent(index);
+                    setSelected(null);
+                  }}
+                  className="block w-full text-left"
+                  aria-label={`Go to page ${index + 1}`}
+                >
+                  <img
+                    src={p.url}
+                    alt={`Page ${index + 1} thumbnail`}
+                    className="h-24 w-full rounded-lg object-cover lg:h-auto"
+                    style={{ transform: p.rotation ? `rotate(${p.rotation}deg)` : undefined }}
+                  />
+                  <span className="mt-1 block text-center text-[10px] font-black text-slate-500">Page {index + 1}</span>
+                </button>
+                <div className="mt-1 flex items-center justify-center gap-0.5">
+                  <button
+                    type="button"
+                    onClick={() => rotatePageAt(index)}
+                    title="Rotate page"
+                    aria-label={`Rotate page ${index + 1}`}
+                    className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => duplicatePageAt(index)}
+                    title="Duplicate page"
+                    aria-label={`Duplicate page ${index + 1}`}
+                    className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertBlankPageAt(index)}
+                    title="Insert blank page after"
+                    aria-label={`Insert blank page after page ${index + 1}`}
+                    className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-rose-600"
+                  >
+                    <FilePlus2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deletePageAt(index)}
+                    disabled={pages.length <= 1}
+                    title="Delete page"
+                    aria-label={`Delete page ${index + 1}`}
+                    className="flex h-6 w-6 items-center justify-center rounded text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-30"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
         </aside>
@@ -1812,7 +2625,7 @@ export function EditPdf() {
                         e.stopPropagation();
                         editSourceText(box);
                       }}
-                      className="absolute rounded-[2px] bg-sky-400/10 opacity-0 outline outline-1 outline-sky-500/60 transition-opacity hover:opacity-100 focus:opacity-100 focus-visible:opacity-100"
+                      className="absolute cursor-text bg-transparent outline-none transition-colors hover:bg-sky-400/[0.06] focus-visible:bg-sky-400/[0.08]"
                       style={{
                         left: `${box.xPct}%`,
                         top: `${box.yPct}%`,
@@ -1832,6 +2645,7 @@ export function EditPdf() {
                         ? el.hPct
                         : Math.max(3, (fontSize / Math.max(1, overlaySize.height)) * 100 * 1.25);
 
+                    const isReplace = el.type === 'replaceText';
                     return (
                       <div
                         key={el.id}
@@ -1844,17 +2658,35 @@ export function EditPdf() {
                         style={{
                           left: `${el.xPct}%`,
                           top: `${el.yPct}%`,
-                          width: `${el.wPct}%`,
+                          // A detected line stays on ONE line and only grows as
+                          // wide as its text (never narrower than the original,
+                          // so it still covers it) — editing it never reflows it
+                          // into two lines. New text boxes keep wrapping.
+                          ...(isReplace
+                            ? { minWidth: `${el.wPct}%`, width: 'max-content', whiteSpace: 'nowrap' as const, overflow: 'visible' as const }
+                            : { width: `${el.wPct}%`, whiteSpace: 'pre-wrap' as const, overflow: 'hidden' as const }),
                           minHeight: `${textHeight}%`,
-                          backgroundColor: el.type === 'replaceText' ? el.backgroundColor : 'transparent',
+                          backgroundColor: isReplace ? el.bgColor : 'transparent',
+                          // A detected gradient (bgColorBottom differs from bgColor)
+                          // covers with a matching top-to-bottom gradient instead
+                          // of a flat swatch, so the cover blends into gradient
+                          // backgrounds instead of reading as an obvious patch.
+                          backgroundImage:
+                            isReplace && el.bgColorBottom && el.bgColorBottom !== el.bgColor
+                              ? `linear-gradient(to bottom, ${el.bgColor}, ${el.bgColorBottom})`
+                              : undefined,
                           color: el.color,
+                          fontFamily: FONT_STACKS[el.fontFamily],
                           fontSize,
-                          fontFamily: el.fontFamily,
-                          fontWeight: el.fontWeight,
-                          fontStyle: el.fontStyle,
-                          outline: selectedThis ? '1px solid #0284c7' : '1px dashed transparent',
+                          fontWeight: el.bold ? 700 : 400,
+                          fontStyle: el.italic ? 'italic' : 'normal',
+                          textDecoration: el.underline ? 'underline' : 'none',
+                          textAlign: el.align ?? 'left',
+                          // No boxed selection outline — editing should read as
+                          // inline text with just a caret, not a framed box.
+                          outline: 'none',
                         }}
-                        className="absolute cursor-text overflow-hidden whitespace-pre-wrap px-[1px] leading-tight"
+                        className="absolute cursor-text px-[1px] font-normal leading-tight"
                       >
                         <div
                           data-editable-id={el.id}
@@ -1884,7 +2716,7 @@ export function EditPdf() {
                         >
                           {el.text}
                         </div>
-                        {selectedThis && (
+                        {selectedThis && el.type === 'text' && (
                           <>
                             <span
                               data-editor-control="true"
@@ -1898,9 +2730,7 @@ export function EditPdf() {
                               data-editor-control="true"
                               onPointerDown={(e) => startResize(e, el)}
                               title="Drag to widen"
-                              className={`absolute h-4 w-4 cursor-ew-resize rounded-tl-sm border-l border-t border-rose-500 bg-white ${
-                                el.type === 'replaceText' ? 'bottom-0 right-0 cursor-nwse-resize' : 'right-0 top-1/2 -translate-y-1/2'
-                              }`}
+                              className="absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 cursor-ew-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
                             />
                           </>
                         )}
@@ -1925,18 +2755,58 @@ export function EditPdf() {
                           border:
                             el.type === 'rect'
                               ? `2px solid ${el.color}`
-                              : selectedThis
-                                ? '1px solid #e11d48'
-                                : el.type === 'whiteout'
-                                  ? '1px solid rgba(15,23,42,0.08)'
-                                  : 'none',
+                              : el.type === 'whiteout' && el.redact
+                                ? '1px dashed #dc2626'
+                                : selectedThis
+                                  ? '1px solid #e11d48'
+                                  : el.type === 'whiteout'
+                                    ? '1px solid rgba(15,23,42,0.08)'
+                                    : 'none',
                           outline: selectedThis ? '1px solid #e11d48' : 'none',
                         }}
                         className="absolute cursor-move"
+                        title={el.type === 'whiteout' && el.redact ? 'Redacted — underlying text is removed on save' : undefined}
                       >
                         {el.type === 'image' && (
                           <img src={el.dataUrl} alt="" className="h-full w-full object-fill" draggable={false} />
                         )}
+                        {selectedThis && (
+                          <span
+                            data-editor-control="true"
+                            onPointerDown={(e) => startResize(e, el)}
+                            className="absolute bottom-0 right-0 h-4 w-4 cursor-nwse-resize rounded-tl-sm border-l border-t border-rose-500 bg-white"
+                          />
+                        )}
+                      </div>
+                    );
+                  }
+
+                  if (el.type === 'field') {
+                    return (
+                      <div
+                        key={el.id}
+                        data-editor-control="true"
+                        onPointerDown={(e) => startDrag(e, el)}
+                        title={`${FIELD_LABELS[el.fieldKind]} field "${el.name}"`}
+                        style={{
+                          left: `${el.xPct}%`,
+                          top: `${el.yPct}%`,
+                          width: `${el.wPct}%`,
+                          height: `${el.hPct}%`,
+                          outline: selectedThis ? '1px solid #e11d48' : 'none',
+                        }}
+                        className="absolute flex cursor-move items-center justify-center gap-1 rounded-[3px] border border-dashed border-sky-500 bg-sky-400/10 px-1 text-[9px] font-black uppercase tracking-wide text-sky-700"
+                      >
+                        {el.fieldKind === 'checkbox' ? (
+                          <CheckSquare className="h-3 w-3 shrink-0" />
+                        ) : el.fieldKind === 'date' ? (
+                          <Calendar className="h-3 w-3 shrink-0" />
+                        ) : el.fieldKind === 'signature' || el.fieldKind === 'initials' ? (
+                          <PenTool className="h-3 w-3 shrink-0" />
+                        ) : (
+                          <TextCursorInput className="h-3 w-3 shrink-0" />
+                        )}
+                        {el.fieldKind !== 'checkbox' && <span className="truncate">{FIELD_LABELS[el.fieldKind]}</span>}
                         {selectedThis && (
                           <span
                             data-editor-control="true"
@@ -1976,6 +2846,18 @@ export function EditPdf() {
           </div>
         </section>
       </div>
+
+      {hasFields && (
+        <label className="flex items-center gap-2 text-xs font-bold text-slate-600">
+          <input
+            type="checkbox"
+            checked={flattenFields}
+            onChange={(e) => setFlattenFields(e.target.checked)}
+            className="h-4 w-4 accent-rose-600"
+          />
+          Flatten fields into the page (uncheck to keep them fillable/interactive)
+        </label>
+      )}
 
       {error && <ErrorNote>{error}</ErrorNote>}
       <PrimaryButton onClick={exportPdf} loading={loading}>
