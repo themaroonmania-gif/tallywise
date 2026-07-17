@@ -5,7 +5,6 @@ import { ArrowRight, Calculator, CheckCircle2 } from 'lucide-react';
 import { calculators, CATEGORIES, CategoryKey } from '@/config/calculators';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
-import { AdSlot } from '@/components/common/AdSlot';
 import type { Metadata } from 'next';
 
 interface CategoryPageProps {
@@ -67,11 +66,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
 
       <main className="site-page py-10 md:py-14">
         <div className="site-container">
-          <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
-            <aside className="hidden 2xl:block">
-              <AdSlot id={`category-${catKey}-left`} type="sidebar" className="my-0" />
-            </aside>
-
+          <div className="mx-auto max-w-6xl">
             <div className="min-w-0 space-y-8">
               <section className={`paper-card relative overflow-hidden rounded-[2rem] p-6 md:p-10`}>
                 <div className={`absolute inset-0 -z-0 bg-gradient-to-br ${accent.glow} via-transparent to-transparent`} />
@@ -131,10 +126,6 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                 ))}
               </section>
             </div>
-
-            <aside className="hidden 2xl:block">
-              <AdSlot id={`category-${catKey}-right`} type="sidebar" className="my-0" />
-            </aside>
           </div>
         </div>
       </main>

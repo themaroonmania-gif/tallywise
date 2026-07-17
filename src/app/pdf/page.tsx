@@ -28,7 +28,6 @@ import {
 import { pdfTools, getPdfTool, PDF_GROUPS, PdfToolGroup } from '@/config/pdfTools';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
-import { AdSlot } from '@/components/common/AdSlot';
 
 const ICONS: Record<string, LucideIcon> = {
   Combine,
@@ -81,11 +80,7 @@ export default function PdfHubPage() {
       <Header />
       <main className="site-page py-10 md:py-14">
         <div className="site-container">
-          <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
-            <aside className="hidden 2xl:block">
-              <AdSlot id="pdf-hub-left" type="sidebar" className="my-0" />
-            </aside>
-
+          <div className="mx-auto max-w-6xl">
             <div className="min-w-0 space-y-8">
               <section className="ink-card overflow-hidden rounded-[2rem] px-5 py-10 text-white md:px-10 md:py-14">
                 <div className="mx-auto max-w-4xl text-center">
@@ -178,10 +173,6 @@ export default function PdfHubPage() {
                 );
               })}
             </div>
-
-            <aside className="hidden 2xl:block">
-              <AdSlot id="pdf-hub-right" type="sidebar" className="my-0" />
-            </aside>
           </div>
         </div>
       </main>

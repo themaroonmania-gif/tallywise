@@ -7,7 +7,6 @@ import { calculators, CATEGORIES, CategoryKey } from '@/config/calculators';
 import { pdfTools } from '@/config/pdfTools';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
-import { AdSlot } from '@/components/common/AdSlot';
 
 type FilterKey = CategoryKey | 'pdf' | 'all';
 
@@ -69,11 +68,7 @@ export default function Home() {
 
       <main className="site-page py-10 md:py-14">
         <div className="site-container">
-          <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
-            <aside className="hidden 2xl:block">
-              <AdSlot id="home-left" type="sidebar" className="my-0" />
-            </aside>
-
+          <div className="mx-auto max-w-6xl">
             <div className="min-w-0 space-y-8">
               <section className="ink-card relative overflow-hidden rounded-[2rem] px-5 py-10 text-white md:px-10 md:py-14">
                 <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#76a7ff]/70 to-transparent" />
@@ -189,10 +184,6 @@ export default function Home() {
                 </div>
               </section>
             </div>
-
-            <aside className="hidden 2xl:block">
-              <AdSlot id="home-right" type="sidebar" className="my-0" />
-            </aside>
           </div>
         </div>
       </main>

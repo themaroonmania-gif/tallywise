@@ -6,7 +6,6 @@ import type { Metadata } from 'next';
 import { pdfTools, getPdfTool, PDF_GROUPS, PdfToolDef } from '@/config/pdfTools';
 import { Header } from '@/components/common/Header';
 import { Footer } from '@/components/common/Footer';
-import { AdSlot } from '@/components/common/AdSlot';
 import { pdfToolComponents, ComingSoonPdfTool } from '@/components/pdf/registry';
 
 interface PdfToolPageProps {
@@ -107,13 +106,8 @@ export default async function PdfToolPage({ params }: PdfToolPageProps) {
 
       <main className="site-page py-8 md:py-12">
         <div className="site-container">
-          <div className="grid gap-8 2xl:grid-cols-[160px_minmax(0,1fr)_160px] 2xl:items-start">
-            <aside className="hidden 2xl:block">
-              <AdSlot id="pdf-left-ad" type="sidebar" className="my-0" />
-            </aside>
-
-            <div className="min-w-0">
-              <div className="mx-auto max-w-5xl space-y-7">
+          <div className="min-w-0">
+            <div className="mx-auto max-w-5xl space-y-7">
                 <nav className="flex flex-wrap items-center gap-2 text-[0.68rem] font-black uppercase tracking-[0.16em] text-[#8292a6]">
                   <Link href="/" className="inline-flex items-center gap-1 transition hover:text-[#10243e]">
                     <Home className="h-3.5 w-3.5" />
@@ -215,12 +209,7 @@ export default async function PdfToolPage({ params }: PdfToolPageProps) {
                     </div>
                   </section>
                 )}
-              </div>
             </div>
-
-            <aside className="hidden 2xl:block">
-              <AdSlot id="pdf-right-ad" type="sidebar" className="my-0" />
-            </aside>
           </div>
         </div>
       </main>
